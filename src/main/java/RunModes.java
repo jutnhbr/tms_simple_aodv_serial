@@ -1,0 +1,3 @@
+public enum RunModes {
+    STANDARD
+}
