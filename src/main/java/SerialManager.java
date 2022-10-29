@@ -1,12 +1,18 @@
 import com.fazecast.jSerialComm.SerialPort;
+import data.AT;
 
 public class SerialManager {
 
+    // PORT CONFIG
     private int baudRate = 9600;
     private int dataBits = 8;
     private int stopBits = 1;
     private int parity = 0;
-    private final int[] standardConfig = {9600, 8, 1, 0};
+    private final int[] standardPortConfig = {9600, 8, 1, 0};
+    // AT COMMAND CONFIG
+
+    private String ATConfigString = AT.AT_CFG.getCommand() + "433000000,5,9,9,4,1,0,0,0,0,4000,8,4";
+
     private SerialPort activePort;
     private final MessageUtil messageUtil = new MessageUtil();
 
@@ -38,10 +44,10 @@ public class SerialManager {
     }
 
     public String revertConfig() {
-        this.baudRate = standardConfig[0];
-        this.dataBits = standardConfig[1];
-        this.stopBits = standardConfig[2];
-        this.parity = standardConfig[3];
+        this.baudRate = standardPortConfig[0];
+        this.dataBits = standardPortConfig[1];
+        this.stopBits = standardPortConfig[2];
+        this.parity = standardPortConfig[3];
         return "\nConfig reverted to standard \n";
     }
 
@@ -65,8 +71,9 @@ public class SerialManager {
         activePort.closePort();
     }
 
-    public void writeData(String data) {
-        data = messageUtil.message(data);
+    public void writeData(String data) throws NullPointerException {
+        if(activePort == null) throw new NullPointerException("ERROR: No active port!");
+        data = messageUtil.parseMessage(data);
         activePort.writeBytes(data.getBytes(), data.length());
     }
 
@@ -76,8 +83,8 @@ public class SerialManager {
         return new String(buffer);
     }
 
-    public String checkConnection() {
-        if(activePort == null) return "\nNo active Port! You need to connect to a port first.\n";
+    public String checkConnection() throws NullPointerException {
+        if(activePort == null) throw new NullPointerException("\nNo active Port! You need to connect to a port first.\n");
         if (activePort.isOpen()) {
             return  "\nConnected to " + activePort.getDescriptivePortName() + " | " + activePort.getSystemPortName().toUpperCase() + "\n";
         }
@@ -88,6 +95,10 @@ public class SerialManager {
 
     public String getCurrentMessageMode(String identifier) {
     	return identifier.equalsIgnoreCase("short") ? messageUtil.getCurrentMode().getModeSymbol() : messageUtil.getCurrentMode().getModeName();
+    }
+
+    public String getATConfigString() {
+        return ATConfigString;
     }
 }
 
