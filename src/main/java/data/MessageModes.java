@@ -1,3 +1,5 @@
+package data;
+
 public enum MessageModes {
     CARRIAGE_RETURN ("Carriage Return", "\\r"),
     NEW_LINE ("New Line","\\n"),
@@ -22,7 +24,7 @@ public enum MessageModes {
 
     @Override
     public String toString() {
-        return "MessageModes{" +
+        return "data.MessageModes{" +
                 "modeName='" + modeName + '\'' +
                 ", modeSymbol='" + modeSymbol + '\'' +
                 '}';

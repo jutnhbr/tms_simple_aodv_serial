@@ -1,3 +1,5 @@
+import data.MessageModes;
+
 public class MessageUtil {
 
     private MessageModes currentMode;
@@ -10,7 +12,7 @@ public class MessageUtil {
     public void changeMessageMode(MessageModes mode) {
         currentMode = mode;
     }
-    public String message(String message) {
+    public String parseMessage(String message) {
         return message + currentMode.getModeSymbol();
     }
     public MessageModes getCurrentMode() {
