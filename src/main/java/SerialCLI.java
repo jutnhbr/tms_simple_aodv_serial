@@ -1,11 +1,12 @@
 import com.fazecast.jSerialComm.SerialPort;
-
-import java.util.Arrays;
+import data.AT;
+import data.RunModes;
 
 public class SerialCLI {
 
     private final Console console = new Console();
     private final SerialManager serialManager = new SerialManager();
+    private final MenuFactory menuFactory = new MenuFactory();
 
 
     public void execute(Enum<RunModes> runMode) {
@@ -13,7 +14,7 @@ public class SerialCLI {
 
             do {
                 console.printMessage("\n" + "MESSAGE MODE: "+ serialManager.getCurrentMessageMode("short") + " | SIMPLE SERIAL COMMUNICATOR | " + "| MODE: " + runMode);
-                console.printMenu();
+                console.printMenu(menuFactory.menuBuilder("cli"));
                 int selection = console.readIntegerFromInput(">>> ");
                 switch(selection) {
                     case 1:
@@ -30,7 +31,11 @@ public class SerialCLI {
                         serialManager.disconnect();
                         break;
                     case 4:
-                        console.printMessage(serialManager.checkConnection());
+                        try {
+                            console.printMessage(serialManager.checkConnection());
+                        } catch (NullPointerException e) {
+                            console.printErrMessage(e.getMessage());
+                        }
                         break;
                     case 5:
                         console.printMessage(serialManager.getConfig());
@@ -46,8 +51,26 @@ public class SerialCLI {
                         console.printErrMessage(serialManager.revertConfig());
                         break;
                     case 8:
-                        serialManager.writeData("Test");
+                        try {
+                            String msg = console.readStringFromInput("Enter Message or type 'atmode' for specific AT Commands: ");
+                            if(msg.equalsIgnoreCase("ATMODE")) {
+                                // Print AT Commands
+                                console.printMenu(menuFactory.menuBuilder("at"));
+                                // Send AT Command
+                                serialManager.writeData(AT.values()[console.readIntegerFromInput(">>> ")].getCommand());
+                                // TODO: Wait for Response
+                            }
+                            else {
+                                serialManager.writeData(msg);
+                                // TODO: Wait for Response
+                            }
+                        } catch (NullPointerException e) {
+                            console.printErrMessage(e.getMessage());
+                        }
                         break;
+                    case 9:
+                        console.printMessage(serialManager.readData());
+                        // TODO: Reading / Writing with threading
                     case 0:
                         console.printErrMessage("Exiting...");
                         System.exit(0);
