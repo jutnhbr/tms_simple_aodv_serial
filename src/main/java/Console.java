@@ -4,7 +4,6 @@ import java.util.Scanner;
 
 public class Console {
 
-    private final LinkedList<String> menu = menuBuilder();
 
     public int readIntegerFromInput(String text) throws InputMismatchException {
         printMessage(text);
@@ -64,28 +63,11 @@ public class Console {
         System.err.println(error);
     }
 
-
-    public void printMenu() {
+    public void printMenu(LinkedList<String> menu) {
         printMessage("\n");
         for(String s : menu) {
             printMessage(s + "\n");
         }
-    }
-
-    public LinkedList<String> menuBuilder() {
-        LinkedList<String> menu = new LinkedList<>();
-
-        menu.add("1: Show COM Ports");
-        menu.add("2: Connect to COM Port");
-        menu.add("3: Disconnect from COM Port");
-        menu.add("4: Check Connection Status");
-        menu.add("5: Check Port Configuration");
-        menu.add("6: Edit Port Configuration");
-        menu.add("7: Revert Configuration");
-        menu.add("8: Send Test String");
-        menu.add("0: Exit");
-
-        return menu;
     }
 
 }
