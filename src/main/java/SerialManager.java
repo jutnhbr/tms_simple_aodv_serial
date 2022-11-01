@@ -1,14 +1,19 @@
 import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortDataListener;
+import com.fazecast.jSerialComm.SerialPortEvent;
 import data.AT;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 
 public class SerialManager {
 
     // PORT CONFIG
-    private int baudRate = 9600;
+    private int baudRate = 115200;
     private int dataBits = 8;
     private int stopBits = 1;
     private int parity = 0;
-    private final int[] standardPortConfig = {9600, 8, 1, 0};
+    private final int[] standardPortConfig = {115200, 8, 1, 0};
     // AT COMMAND CONFIG
 
     private String ATConfigString = AT.AT_CFG.getCommand() + "433000000,5,9,9,4,1,0,0,0,0,4000,8,4";
@@ -57,13 +62,13 @@ public class SerialManager {
         port.setNumDataBits(dataBits);
         port.setNumStopBits(stopBits);
         port.setParity(parity);
-        boolean check = port.openPort();
         activePort = port;
+        boolean check = activePort.openPort();
         if (check) {
-            return "\nConnected to: " + port.getSystemPortName().toUpperCase() + " | " + port.getDescriptivePortName() + "\n";
+            return "\nConnected to: " + activePort.getSystemPortName().toUpperCase() + " | " + activePort.getDescriptivePortName() + "\n";
         }
         else {
-            return "\nERROR: Could not connect to " + port.getSystemPortName().toUpperCase() + "\n";
+            return "\nERROR: Could not connect to " + activePort.getSystemPortName().toUpperCase() + "\n";
         }
     }
 
@@ -78,9 +83,21 @@ public class SerialManager {
     }
 
     public String readData() {
-        byte[] buffer = new byte[activePort.bytesAvailable()];
-        activePort.readBytes(buffer, buffer.length);
-        return new String(buffer);
+        byte[] readBuffer;
+        try {
+            while (true) {
+                while (activePort.bytesAvailable() == 0)
+                    Thread.sleep(20);
+
+                readBuffer = new byte[activePort.bytesAvailable()];
+                int numRead = activePort.readBytes(readBuffer, readBuffer.length);
+                System.out.println("> Read " + numRead + " bytes.");
+                return new String(readBuffer, StandardCharsets.UTF_8);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
     }
 
     public String checkConnection() throws NullPointerException {
@@ -94,7 +111,7 @@ public class SerialManager {
     }
 
     public String getCurrentMessageMode(String identifier) {
-    	return identifier.equalsIgnoreCase("short") ? messageUtil.getCurrentMode().getModeSymbol() : messageUtil.getCurrentMode().getModeName();
+    	return identifier.equalsIgnoreCase("short") ? messageUtil.getCurrentMode().getModeSymbolAsString() : messageUtil.getCurrentMode().getModeName();
     }
 
     public String getATConfigString() {
