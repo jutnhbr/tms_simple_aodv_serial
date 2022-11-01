@@ -2,6 +2,9 @@ import com.fazecast.jSerialComm.SerialPort;
 import data.AT;
 import data.RunModes;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+
 public class SerialCLI {
 
     private final Console console = new Console();
@@ -9,7 +12,7 @@ public class SerialCLI {
     private final MenuFactory menuFactory = new MenuFactory();
 
 
-    public void execute(Enum<RunModes> runMode) {
+    public void execute(Enum<RunModes> runMode) throws InterruptedException {
         if (runMode.equals(RunModes.STANDARD)) {
 
             do {
@@ -52,7 +55,7 @@ public class SerialCLI {
                         break;
                     case 8:
                         try {
-                            String msg = console.readStringFromInput("Enter Message or type 'atmode' for specific AT Commands: ");
+                            String msg = console.readStringFromInput("Enter Message or type 'atmode' for specific AT Commands / 'config' for auto config: ");
                             if(msg.equalsIgnoreCase("ATMODE")) {
                                 // Print AT Commands
                                 console.printMenu(menuFactory.menuBuilder("at"));
@@ -60,17 +63,28 @@ public class SerialCLI {
                                 serialManager.writeData(AT.values()[console.readIntegerFromInput(">>> ")].getCommand());
                                 // TODO: Wait for Response
                             }
+                            else if(msg.equalsIgnoreCase("config")) {
+                                console.printMessage("Configuring RX Mode ... \n");
+                                serialManager.writeData(AT.AT_RX.getCommand());
+                                Thread.sleep(1000);
+                                console.printMessage(serialManager.readData());
+                                console.printMessage("\nConfiguring Config String ...\n");
+                                serialManager.writeData(serialManager.getATConfigString());
+                                Thread.sleep(1000);
+                            }
                             else {
                                 serialManager.writeData(msg);
-                                // TODO: Wait for Response
                             }
                         } catch (NullPointerException e) {
                             console.printErrMessage(e.getMessage());
                         }
+                        Thread.sleep(1000);
+                        console.printMessage("Response: " + serialManager.readData());
                         break;
                     case 9:
-                        console.printMessage(serialManager.readData());
-                        // TODO: Reading / Writing with threading
+                        // TODO: proper reading mode
+                        console.printMessage("Response: " + serialManager.readData());
+                        break;
                     case 0:
                         console.printErrMessage("Exiting...");
                         System.exit(0);
