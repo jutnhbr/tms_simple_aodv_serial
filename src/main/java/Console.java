@@ -46,7 +46,7 @@ public class Console {
 
         while (true) {
             try {
-                return StringInputSc.nextLine().toLowerCase();
+                return StringInputSc.nextLine();
 
             }
             catch (InputMismatchException e) {
