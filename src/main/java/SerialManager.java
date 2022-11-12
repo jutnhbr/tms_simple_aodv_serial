@@ -1,10 +1,5 @@
 import com.fazecast.jSerialComm.SerialPort;
-import com.fazecast.jSerialComm.SerialPortDataListener;
-import com.fazecast.jSerialComm.SerialPortEvent;
 import data.AT;
-
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 
 public class SerialManager {
 
