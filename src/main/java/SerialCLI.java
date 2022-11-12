@@ -2,17 +2,15 @@ import com.fazecast.jSerialComm.SerialPort;
 import data.AT;
 import data.RunModes;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-
 public class SerialCLI {
 
     private final Console console = new Console();
     private final SerialManager serialManager = new SerialManager();
+    private final ReadingThread readingThread = new ReadingThread(serialManager);
     private final MenuFactory menuFactory = new MenuFactory();
 
 
-    public void execute(Enum<RunModes> runMode) throws InterruptedException {
+    public synchronized void execute(Enum<RunModes> runMode) throws InterruptedException {
         if (runMode.equals(RunModes.STANDARD)) {
 
             do {
@@ -28,10 +26,12 @@ public class SerialCLI {
                         break;
                     case 2:
                         console.printMessage(serialManager.connect(serialManager.getPortByName(console.readStringFromInput("Enter Port Name: "))));
+                        readingThread.start();
                         break;
                     case 3:
                         console.printErrMessage("Disconnected from last port.");
                         serialManager.disconnect();
+                        readingThread.stopThread();
                         break;
                     case 4:
                         try {
@@ -61,16 +61,14 @@ public class SerialCLI {
                                 console.printMenu(menuFactory.menuBuilder("at"));
                                 // Send AT Command
                                 serialManager.writeData(AT.values()[console.readIntegerFromInput(">>> ")].getCommand());
-                                // TODO: Wait for Response
                             }
                             else if(msg.equalsIgnoreCase("config")) {
                                 console.printMessage("Configuring RX Mode ... \n");
                                 serialManager.writeData(AT.AT_RX.getCommand());
-                                Thread.sleep(1000);
-                                console.printMessage(serialManager.readData());
+                                Thread.sleep(2000);
                                 console.printMessage("\nConfiguring Config String ...\n");
                                 serialManager.writeData(serialManager.getATConfigString());
-                                Thread.sleep(1000);
+                                Thread.sleep(2000);
                             }
                             else {
                                 serialManager.writeData(msg);
@@ -79,11 +77,9 @@ public class SerialCLI {
                             console.printErrMessage(e.getMessage());
                         }
                         Thread.sleep(1000);
-                        console.printMessage("Response: " + serialManager.readData());
                         break;
                     case 9:
-                        // TODO: proper reading mode
-                        console.printMessage("Response: " + serialManager.readData());
+                        //
                         break;
                     case 0:
                         console.printErrMessage("Exiting...");

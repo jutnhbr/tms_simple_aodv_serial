@@ -23,7 +23,6 @@ public class SerialManager {
 
 
     public SerialManager() {
-
     }
 
 
@@ -79,25 +78,8 @@ public class SerialManager {
     public void writeData(String data) throws NullPointerException {
         if(activePort == null) throw new NullPointerException("ERROR: No active port!");
         data = messageUtil.parseMessage(data);
+        System.out.println("Writing Data:" + data);
         activePort.writeBytes(data.getBytes(), data.length());
-    }
-
-    public String readData() {
-        byte[] readBuffer;
-        try {
-            while (true) {
-                while (activePort.bytesAvailable() == 0)
-                    Thread.sleep(20);
-
-                readBuffer = new byte[activePort.bytesAvailable()];
-                int numRead = activePort.readBytes(readBuffer, readBuffer.length);
-                System.out.println("> Read " + numRead + " bytes.");
-                return new String(readBuffer, StandardCharsets.UTF_8);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
     }
 
     public String checkConnection() throws NullPointerException {
@@ -116,6 +98,10 @@ public class SerialManager {
 
     public String getATConfigString() {
         return ATConfigString;
+    }
+
+    public SerialPort getActivePort() {
+        return activePort;
     }
 }
 

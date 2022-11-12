@@ -6,5 +6,8 @@ public class Application {
 
         SerialCLI serialCLI = new SerialCLI();
         serialCLI.execute(RunModes.STANDARD);
+
+
+
     }
 }
