@@ -1,3 +1,4 @@
+import control.SerialCLI;
 import data.RunModes;
 
 public class Application {
