@@ -25,13 +25,20 @@ public class SerialCLI {
                         }
                         break;
                     case 2:
-                        console.printMessage(serialManager.connect(serialManager.getPortByName(console.readStringFromInput("Enter Port Name: "))));
-                        readingThread.start();
+                        if(serialManager.getActivePort() != null && serialManager.getActivePort().isOpen()) {
+                            console.printErrMessage("Port is already open!\n");
+                            break;
+                        }
+                        else {
+                            serialManager.connect(serialManager.getPortByName(console.readStringFromInput("Enter Port Name: ")));
+                            console.printMessage(serialManager.getActivePort().getSystemPortName().toUpperCase() + " | " + serialManager.getActivePort().getDescriptivePortName() + " is now open.\n");
+                            readingThread.start();
+                        }
                         break;
                     case 3:
-                        console.printErrMessage("Disconnected from last port.");
-                        serialManager.disconnect();
                         readingThread.stopThread();
+                        serialManager.disconnect();
+                        console.printErrMessage("Disconnected from last port.");
                         break;
                     case 4:
                         try {
