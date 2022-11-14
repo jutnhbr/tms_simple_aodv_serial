@@ -1,3 +1,9 @@
+package control;
+
+import model.SerialManager;
+import threads.ParseTesterThread;
+import view.Console;
+
 public class TestEnvironment {
 
     private final Console console = new Console();

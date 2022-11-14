@@ -1,3 +1,8 @@
+package threads;
+
+import model.SerialManager;
+import view.Console;
+
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 

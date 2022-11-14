@@ -1,5 +1,8 @@
+package model;
+
 import com.fazecast.jSerialComm.SerialPort;
 import data.AT;
+import util.MessageUtil;
 
 public class SerialManager {
 

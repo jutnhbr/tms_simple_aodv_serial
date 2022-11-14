@@ -1,3 +1,4 @@
+package util;
 import data.MessageModes;
 
 public class MessageUtil {

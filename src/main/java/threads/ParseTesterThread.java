@@ -1,5 +1,9 @@
+package threads;
+
 import data.AT;
 import data.ATResponse;
+import model.SerialManager;
+import view.Console;
 
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -51,8 +55,16 @@ public class ParseTesterThread extends Thread {
         parse the incoming message instead of going through the AT command switch case
          */
         if (availableBytes > 0) {
-            System.out.println("Bytes available: " + availableBytes);
-            // TODO: Parse received message
+            if(data.length <= availableBytes) {
+                console.printMessage("TESTER>>> Reading incoming Message: " + new String(data, StandardCharsets.UTF_8));
+            }
+            // If the incoming message is bigger than the available bytes then we need to parse the message
+            else {
+                String message = new String(data, StandardCharsets.UTF_8);
+                message = message.substring(0, availableBytes);
+                console.printMessage("TESTER>>> Reading incoming Message: " + message +"\n");
+                serialManager.writeData("TESTER RECEIVED MESSAGE: " + message);
+            }
             availableBytes = 0;
         } else {
             // If there wasn't a recent AT+SEND command, try to parse the incoming message as an AT command
@@ -62,7 +74,7 @@ public class ParseTesterThread extends Thread {
             try {
                 at = AT.valueOf(replaceCommand(response.trim()));
             } catch (IllegalArgumentException e) {
-                console.printErrMessage("TESTER>>> Invalid AT Command: NOT FOUND");
+                console.printErrMessage("TESTER>>> Invalid AT Command: NOT FOUND" +"\n");
             }
             // If AT Command exists, parse response
             if (at != null) {
@@ -85,6 +97,7 @@ public class ParseTesterThread extends Thread {
                             String[] split = response.split("=");
                             if (split.length == 2) {
                                 availableBytes = parseSendingMode(split[1]);
+                                console.printMessage("TESTER>>> "  + availableBytes + " bytes are now available to read."+"\n");
                             }
                         } else {
                             serialManager.writeData(ATResponse.AT_ERR.getCommand());
@@ -108,7 +121,7 @@ public class ParseTesterThread extends Thread {
             availableBytes = Integer.parseInt(bytes.trim());
         } catch (NumberFormatException e) {
             serialManager.writeData(ATResponse.AT_ERR.getCommand());
-            console.printErrMessage("TESTER>>> Invalid Sendmode Length");
+            console.printErrMessage("TESTER>>> Invalid Sendmode Length"+"\n");
             return -1;
         }
         if (availableBytes < 1 || availableBytes > 255) {
@@ -117,6 +130,4 @@ public class ParseTesterThread extends Thread {
         }
         return availableBytes;
     }
-
-
 }

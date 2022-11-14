@@ -1,6 +1,12 @@
+package control;
+
 import com.fazecast.jSerialComm.SerialPort;
 import data.AT;
 import data.RunModes;
+import model.SerialManager;
+import threads.ReadingThread;
+import view.Console;
+import view.MenuFactory;
 
 public class SerialCLI {
 
