@@ -4,13 +4,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class ReadingThread extends Thread {
 
     private SerialManager serialManager;
-    private Console console = new Console();
+    private final Console console = new Console();
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
 
     public ReadingThread(SerialManager serialManager) {
         this.serialManager = serialManager;
-
     }
 
 
@@ -26,10 +25,10 @@ public class ReadingThread extends Thread {
                     readBuffer = new byte[serialManager.getActivePort().bytesAvailable()];
                     int numRead = serialManager.getActivePort().readBytes(readBuffer, readBuffer.length);
                     // System.out.println("Read " + numRead + " bytes.");
-                    System.out.println(">>> " + new String(readBuffer, StandardCharsets.UTF_8));
+                    console.printMessage(new String(readBuffer, StandardCharsets.UTF_8));
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (Exception ignored) {
+
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
