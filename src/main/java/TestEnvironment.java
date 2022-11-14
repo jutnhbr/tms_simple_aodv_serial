@@ -1,10 +1,18 @@
-
 public class TestEnvironment {
 
-    public static void main(String[] args) {
+    private final Console console = new Console();
 
-        SerialTester serialTester = new SerialTester();
-        serialTester.connect("");
+    public void start(SerialManager serialTester) throws InterruptedException {
+        serialTester.connect(serialTester.getPortByName(console.readStringFromInput("Enter Port Name: ")));
+        console.printMessage("Tester connected to "+ serialTester.getActivePort().getSystemPortName() + "\n");
+        console.printMessage("Starting Parsing Thread...\n");
+        ParseTesterThread test = new ParseTesterThread(serialTester);
+        test.start();
+        console.printMessage("Tester is running ...\n");
+
+
+
+
 
     }
 
