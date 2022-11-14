@@ -52,6 +52,9 @@ public class SerialManager {
 
 
     public String connect(SerialPort port) {
+        if(port.isOpen()) {
+            return "Port is already open.";
+        }
         port.setBaudRate(baudRate);
         port.setNumDataBits(dataBits);
         port.setNumStopBits(stopBits);
