@@ -78,10 +78,10 @@ public class SerialCLI {
                             else if(msg.equalsIgnoreCase("config")) {
                                 console.printMessage("Configuring RX Mode ... \n");
                                 serialManager.writeData(AT.AT_RX.getCommand());
-                                Thread.sleep(2000);
+                                Thread.sleep(3000);
                                 console.printMessage("\nConfiguring Config String ...\n");
                                 serialManager.writeData(serialManager.getATConfigString());
-                                Thread.sleep(2000);
+                                Thread.sleep(3000);
                             }
                             else {
                                 serialManager.writeData(msg);
