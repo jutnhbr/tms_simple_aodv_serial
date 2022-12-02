@@ -27,7 +27,7 @@ public class MenuFactory {
             for(AT command : AT.values()) {
                 menu.add(pos + ": " + command);
                 pos++;
-            };
+            }
             return menu;
         }
         else {
