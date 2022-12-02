@@ -14,7 +14,7 @@ public class SerialManager {
     private final int[] standardPortConfig = {115200, 8, 1, 0};
     // AT COMMAND CONFIG
 
-    private String ATConfigString = AT.AT_CFG.getCommand() + "433000000,5,9,9,4,1,0,0,0,0,4000,8,4";
+    private final String ATConfigString = AT.AT_CFG.getCommand() + "433920000,5,6,10,4,1,0,0,0,0,3000,8,4";
 
     private SerialPort activePort;
     private final MessageUtil messageUtil = new MessageUtil();

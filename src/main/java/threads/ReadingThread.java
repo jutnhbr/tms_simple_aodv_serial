@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ReadingThread extends Thread {
 
-    private SerialManager serialManager;
+    private final SerialManager serialManager;
     private final Console console = new Console();
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
 

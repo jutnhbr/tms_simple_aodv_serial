@@ -9,7 +9,7 @@ public enum MessageModes {
     private final String modeSymbol;
     private final String modeSymbolAsString;
 
-    private MessageModes(String modeName, String modeSymbol, String modeSymbolAsString) {
+    MessageModes(String modeName, String modeSymbol, String modeSymbolAsString) {
         this.modeName = modeName;
         this.modeSymbol = modeSymbol;
         this.modeSymbolAsString = modeSymbolAsString;
