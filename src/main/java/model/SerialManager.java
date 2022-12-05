@@ -4,6 +4,8 @@ import com.fazecast.jSerialComm.SerialPort;
 import data.AT;
 import util.MessageUtil;
 
+import java.util.Arrays;
+
 public class SerialManager {
 
     // PORT CONFIG
@@ -81,6 +83,11 @@ public class SerialManager {
         data = messageUtil.parseMessage(data);
         System.out.println("Writing Data:" + data);
         activePort.writeBytes(data.getBytes(), data.length());
+    }
+    public void writeDataAsBytes(byte[] data) throws NullPointerException {
+        if(activePort == null) throw new NullPointerException("ERROR: No active port!");
+        System.out.println("Writing Data:" + Arrays.toString(data));
+        activePort.writeBytes(data, data.length);
     }
 
     public String checkConnection() throws NullPointerException {
