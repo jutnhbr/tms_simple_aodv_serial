@@ -6,16 +6,19 @@ import model.messageTypes.*;
 import model.routing.ReverseRoutingEntry;
 import model.routing.RoutingEntry;
 import model.routing.RoutingTableManager;
-import java.util.Arrays;
+
 import java.util.Base64;
 
 public class ProtocolManager {
 
     // Node
-    private final byte ownAddr = Byte.parseByte("AAAA", 16);
+    private final byte ownAddr = 1;
     // Local Network Data
     private byte localSeq = 0;
     private byte localReq = 0;
+    // Network Parameters
+    private int RREQRetries = 0;
+    private static final int RREQ_RETRIES_MAX = 3;
     // Config Stuff
     private final RoutingTableManager routingTableManager = new RoutingTableManager();
     private final SerialManager serialManager = new SerialManager();
@@ -39,8 +42,9 @@ public class ProtocolManager {
         // TODO config
     }
 
+    // Add own address / route to routing table
     private void addSelfToRoutingTable() {
-        routingTableManager.addRoutingEntry(ownAddr, (byte) 0, ownAddr, (byte) 0, null);
+       routingTableManager.addRoutingEntry(ownAddr, (byte) 0, ownAddr, (byte) 0, null);
     }
 
     private void updateRoutingTable() {
@@ -75,12 +79,15 @@ public class ProtocolManager {
 
     public void sendRREQBroadcast(RREQ routeRequest) {
         byte[] reqBytes = RREQtoBytes(routeRequest);
-        reqBytes = Base64.getEncoder().withoutPadding().encodeToString(reqBytes).getBytes();
-        serialManager.writeData(Arrays.toString(reqBytes));
+       // reqBytes = Base64.getEncoder().withoutPadding().encodeToString(reqBytes);
+        String reqString = Base64.getEncoder().withoutPadding().encodeToString(reqBytes);
+        serialManager.writeData(reqString);
     }
 
     public void sendRREP(RREP routeReply) {
-        // TODO
+        byte[] repBytes = RREPtoBytes(routeReply);
+        String repString = Base64.getEncoder().withoutPadding().encodeToString(repBytes);
+        serialManager.writeData(repString);
 
     }
     public void sendRERR(RERR routeError) {
@@ -106,7 +113,7 @@ public class ProtocolManager {
 
         byte[] incomingMessageBytes;
         // TODO use real bytes and cases
-        incomingMessageBytes = Base64.getDecoder().decode(incomingMessage.substring(0, 8));
+        incomingMessageBytes = Base64.getDecoder().decode(incomingMessage);
         switch (incomingMessageBytes[0]) {
             case 1 -> processRREQ(incomingMessageBytes);
             case 2 -> processRREP(incomingMessageBytes);
@@ -118,14 +125,24 @@ public class ProtocolManager {
 
     public void processRREQ(byte[] incomingMessageBytes) {
         // TODO: Parse relevant data
-        byte sourceAddr = 0;
+        byte sourceAddr = 0; // TODO: Get Source Address from the Lora LR,XXXX indicator
         byte reqID  = 0;
+        byte destAddr = 0;
 
-        // TODO: Update Routing Tables
 
         // TODO: Check routing Tables if Route exists
+        RoutingEntry routingEntry = findRoutingEntry(destAddr);
+        if (routingEntry != null) {
+            System.out.println("Route to Destination already exists");
+        }
+        // TODO: Update Routing Tables
+
 
         // TODO: Check if Addr is destination
+        if (destAddr == ownAddr) {
+            // TODO process message and send RREP
+            System.out.println("Destination reached");
+        }
 
         // TODO: Send RREP or Forward RREQ
 
@@ -150,14 +167,23 @@ public class ProtocolManager {
      *
      */
 
-    private byte encodeBase64(byte[] bytes) {
-        return 0;
-    }
-    private byte[] decodeBase64(byte b) {
-        return null;
+    // Create RREQ Message with a specific destination address
+    public RREQ generateRREQ(byte destAddr) {
+        localReq = (byte) (localReq + 1);
+        localSeq = (byte) (localSeq + 1);
+        return new RREQ((byte) 0, (byte) 0,localReq, destAddr, (byte) 0, ownAddr, localSeq);
     }
 
-    private byte[] RREQtoBytes(RREQ routeRequest) {
+    private String encodeBase64(byte[] bytes) {
+        return Base64.getEncoder().withoutPadding().encodeToString(bytes);
+
+    }
+    private byte[] decodeBase64(String base64String) {
+        return Base64.getDecoder().decode(base64String);
+    }
+
+    // Convert a RREQ to a byte array
+    public byte[] RREQtoBytes(RREQ routeRequest) {
         return new byte[]{
                 routeRequest.getType(),
                 routeRequest.getFlags(),
@@ -167,6 +193,17 @@ public class ProtocolManager {
                 routeRequest.getDestSeq(),
                 routeRequest.getSourceAddr(),
                 routeRequest.getSourceSeq()
+        };
+    }
+
+    public byte[] RREPtoBytes(RREP routeReply) {
+        return new byte[]{
+                routeReply.getType(),
+                routeReply.getDestAddr(),
+                routeReply.getDestSeq(),
+                routeReply.getHopCount(),
+                routeReply.getSourceAddr(),
+
         };
     }
 
