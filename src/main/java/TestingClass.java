@@ -9,7 +9,7 @@ public class TestingClass {
     public static void main(String[] args) throws InterruptedException {
 
         LoraCLI loraCLI = new LoraCLI();
-        // loraCLI.start(); QUFBQQ
+        // loraCLI.start();
 
         ProtocolManager protocolManager = new ProtocolManager();
         RREQ rreq = protocolManager.generateRREQ((byte) 2);
