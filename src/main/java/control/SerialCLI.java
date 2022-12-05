@@ -12,7 +12,7 @@ public class SerialCLI {
 
     private final Console console = new Console();
     private final SerialManager serialManager = new SerialManager();
-    private final ReadingThread readingThread = new ReadingThread(serialManager);
+    private final ReadingThread readingThread = new ReadingThread(serialManager, false);
     private final MenuFactory menuFactory = new MenuFactory();
 
 
