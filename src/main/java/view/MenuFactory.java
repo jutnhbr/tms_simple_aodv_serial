@@ -30,6 +30,15 @@ public class MenuFactory {
             }
             return menu;
         }
+        else if(menuName.equalsIgnoreCase("lora")) {
+            menu.add("1: Show Available Ports");
+            menu.add("2: Connect to Port");
+            menu.add("3: Auto Configure Send Mode");
+            menu.add("4: Send Route Request");
+            menu.add("5: Show Routing Table");
+            menu.add("0: Exit");
+            return menu;
+        }
         else {
             return null;
         }
