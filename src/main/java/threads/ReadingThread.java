@@ -11,10 +11,12 @@ public class ReadingThread extends Thread {
     private final SerialManager serialManager;
     private final Console console = new Console();
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private boolean AODV = false;
 
 
-    public ReadingThread(SerialManager serialManager) {
+    public ReadingThread(SerialManager serialManager, boolean aodvFlag) {
         this.serialManager = serialManager;
+        this.AODV = aodvFlag;
     }
 
 
@@ -30,7 +32,15 @@ public class ReadingThread extends Thread {
                     readBuffer = new byte[serialManager.getActivePort().bytesAvailable()];
                     int numRead = serialManager.getActivePort().readBytes(readBuffer, readBuffer.length);
                     // System.out.println("Read " + numRead + " bytes.");
-                    console.printMessage(new String(readBuffer, StandardCharsets.UTF_8));
+                    // write into a queue
+                    if(AODV) {
+                       // TODO: Write readBuffer into a queue to send it to the main Thread
+
+
+                    }
+                    else {
+                        console.printMessage(new String(readBuffer, StandardCharsets.UTF_8));
+                    }
                 }
             } catch (Exception ignored) {
 
