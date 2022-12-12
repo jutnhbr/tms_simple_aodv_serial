@@ -5,14 +5,14 @@ import java.util.List;
 
 public class RoutingEntry {
 
-    private byte destAddr;
-    private byte destSeqNum;
-    private byte nextHop;
-    private byte hopCount;
-    private List<Byte> preList = new ArrayList<>();
+    private String destAddr;
+    private String destSeqNum;
+    private String nextHop;
+    private String hopCount;
+    private List<String> preList;
 
 
-    public RoutingEntry(byte destAddr, byte destSeqNum, byte nextHop, byte hopCount, List<Byte> preList) {
+    public RoutingEntry(String destAddr, String destSeqNum, String nextHop, String hopCount, List<String> preList) {
         this.destAddr = destAddr;
         this.destSeqNum = destSeqNum;
         this.nextHop = nextHop;
@@ -20,43 +20,43 @@ public class RoutingEntry {
         this.preList = preList;
     }
 
-    public byte getDestAddr() {
+    public String getDestAddr() {
         return destAddr;
     }
 
-    public void setDestAddr(byte destAddr) {
+    public void setDestAddr(String destAddr) {
         this.destAddr = destAddr;
     }
 
-    public byte getDestSeqNum() {
+    public String getDestSeqNum() {
         return destSeqNum;
     }
 
-    public void setDestSeqNum(byte destSeqNum) {
+    public void setDestSeqNum(String destSeqNum) {
         this.destSeqNum = destSeqNum;
     }
 
-    public byte getNextHop() {
+    public String getNextHop() {
         return nextHop;
     }
 
-    public void setNextHop(byte nextHop) {
+    public void setNextHop(String nextHop) {
         this.nextHop = nextHop;
     }
 
-    public byte getHopCount() {
+    public String getHopCount() {
         return hopCount;
     }
 
-    public void setHopCount(byte hopCount) {
+    public void setHopCount(String hopCount) {
         this.hopCount = hopCount;
     }
 
-    public List<Byte> getPreList() {
+    public List<String> getPreList() {
         return preList;
     }
 
-    public void setPreList(List<Byte> preList) {
+    public void setPreList(List<String> preList) {
         this.preList = preList;
     }
 
@@ -65,9 +65,9 @@ public class RoutingEntry {
     public String toString() {
         return "RoutingEntry{" +
                 "destAddr=" + destAddr +
-                ", destSeqNum=" + destSeqNum +
+                ", destSeqNum=" + Integer.parseInt(destSeqNum,2) +
                 ", nextHop=" + nextHop +
-                ", hopCount=" + hopCount +
+                ", hopCount=" + Integer.parseInt(hopCount,2) +
                 ", preList=" + preList +
                 '}';
     }
