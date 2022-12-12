@@ -9,6 +9,7 @@ import model.routing.RoutingTableManager;
 import org.uncommons.maths.binary.BitString;
 import view.Console;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.List;
@@ -135,15 +136,14 @@ public class ProtocolManager {
 
     public void receiveIncomingPayload(byte[] payload) {
         // TODO Receive Bytes from SerialManager / Queue
-        // Split LR,XXXX from Payload
-        String[] payloadSplit = new String(payload).split(" ");
-        // Save LR,XXXX as prevHop
-        this.prevHop = payloadSplit[0];
-        // Save the rest as payload
-        String payloadString = payloadSplit[1];
-        // TODO: Decode payloadString with Base64
-        // TODO Convert payloadString to binaryString
-        String binaryData = null;
+        // Split LR,XXXX,XX, from Payload
+        String[] payloadSplit = new String(payload).split(",");
+        // Save [1] XXXX as prevHop
+        this.prevHop = payloadSplit[1];
+        // Save [3] the rest as payload
+        String payloadString = payloadSplit[3];
+        byte[] payloadBytes = decodeBase64(payloadString);
+        String binaryData = new BigInteger(1, payloadBytes).toString(2);
         parseMessageType(binaryData);
     }
 

@@ -16,9 +16,7 @@ public class TestingClass {
         // LoraCLI loraCLI = new LoraCLI();
         // loraCLI.start();
 
-        String test = "000001000000000000000001110111011101110100000000101011011101111100000001";
-        ProtocolManager protocolManager = new ProtocolManager(null);
-        protocolManager.parseMessageType(test);
+
 
 
         String destAddr = "FFFF";
@@ -92,6 +90,16 @@ public class TestingClass {
         // get remaining bits
         String type_ = binaryStr.substring(0, binaryStr.length() - 66);
         System.out.println("Type " + Integer.parseInt(type_,2));
+
+        System.out.println("*******************************************");
+
+
+        String lora = "LR,XXXX,XX,";
+        String pl = lora + encodedPayload;
+        System.out.println("Encoded Payload with Lora Addition --> " + pl);
+        ProtocolManager protocolManager = new ProtocolManager(null);
+        // protocolManager.parseMessageType(test);
+        protocolManager.receiveIncomingPayload(pl.getBytes());
 
 
     }
