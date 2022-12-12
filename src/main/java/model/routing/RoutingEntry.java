@@ -9,15 +9,15 @@ public class RoutingEntry {
     private String destSeqNum;
     private String nextHop;
     private String hopCount;
-    private List<String> preList;
+    private String prev;
 
 
-    public RoutingEntry(String destAddr, String destSeqNum, String nextHop, String hopCount, List<String> preList) {
+    public RoutingEntry(String destAddr, String destSeqNum, String nextHop, String hopCount, String prev) {
         this.destAddr = destAddr;
         this.destSeqNum = destSeqNum;
         this.nextHop = nextHop;
         this.hopCount = hopCount;
-        this.preList = preList;
+        this.prev = prev;
     }
 
     public String getDestAddr() {
@@ -52,12 +52,12 @@ public class RoutingEntry {
         this.hopCount = hopCount;
     }
 
-    public List<String> getPreList() {
-        return preList;
+    public String getPreList() {
+        return prev;
     }
 
-    public void setPreList(List<String> preList) {
-        this.preList = preList;
+    public void setPreList(String prev) {
+        this.prev = prev;
     }
 
 
@@ -68,7 +68,7 @@ public class RoutingEntry {
                 ", destSeqNum=" + Integer.parseInt(destSeqNum,2) +
                 ", nextHop=" + nextHop +
                 ", hopCount=" + Integer.parseInt(hopCount,2) +
-                ", preList=" + preList +
+                ", prev=" + prev +
                 '}';
     }
 }
