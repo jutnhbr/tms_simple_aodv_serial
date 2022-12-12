@@ -21,6 +21,7 @@ public class ProtocolManager {
     // Local Network Data
     private int localSeqNum = 0;
     private int localReq = 0;
+    private String prevHop;
     // Network Parameters
     private int RREQRetries = 0;
     private static final int RREQ_RETRIES_MAX = 3;
@@ -52,23 +53,30 @@ public class ProtocolManager {
         routingTableManager.addRoutingEntry(ownAddr, new BitString("00000000").toString(), ownAddr, new BitString("000000").toString(), null);
     }
 
-    private void updateRoutingTable(String destAddr, String destSeqNum, String nextHop, String hopCount, List<String> preList) {
+    private void updateRoutingTable(String destAddr, String destSeqNum, String nextHop, String hopCount, String prev) {
         // TODO: Get PreList from RoutingTable
         // TODO: Get nextHop
-        RoutingEntry entry = new RoutingEntry(destAddr, destSeqNum, nextHop, hopCount, preList);
+        RoutingEntry entry = new RoutingEntry(destAddr, destSeqNum, nextHop, hopCount, prev);
         // Re-Check if entry already exists
         if (routingTableManager.getRoutingTable().contains(entry)) {
             console.printMessage("ProtocolManager >>> Routing Table already contains entry: " + entry);
         } else {
             // Add entry
             console.printMessage("ProtocolManager >>> Adding entry to routing table: " + entry);
-            routingTableManager.addRoutingEntry(destAddr, destSeqNum, nextHop, hopCount, preList);
+            routingTableManager.addRoutingEntry(destAddr, destSeqNum, nextHop, hopCount, prev);
         }
 
     }
-
-    private void updateReverseRoutingTable() {
-        // TODO
+    private void updateReverseRoutingTable(String destAddr, String sourceAddr, String req, String hopCount, String prevHop) {
+        ReverseRoutingEntry entry = new ReverseRoutingEntry(destAddr, sourceAddr, req, hopCount, prevHop);
+        // Re-Check if entry already exists
+        if (routingTableManager.getReverseRoutingTable().contains(entry)) {
+            console.printMessage("ProtocolManager >>> Reverse Routing Table already contains entry: " + entry);
+        } else {
+            // Add entry
+            console.printMessage("ProtocolManager >>> Adding entry to reverse routing table: " + entry);
+            routingTableManager.addReverseRoutingEntry(destAddr, sourceAddr, req, hopCount, prevHop);
+        }
     }
 
     // Check if route to destAddr exists
@@ -127,8 +135,14 @@ public class ProtocolManager {
 
     public void receiveIncomingPayload(byte[] payload) {
         // TODO Receive Bytes from SerialManager / Queue
-        // TODO: Decode Base64
-        // TODO Convert to binaryString
+        // Split LR,XXXX from Payload
+        String[] payloadSplit = new String(payload).split(" ");
+        // Save LR,XXXX as prevHop
+        this.prevHop = payloadSplit[0];
+        // Save the rest as payload
+        String payloadString = payloadSplit[1];
+        // TODO: Decode payloadString with Base64
+        // TODO Convert payloadString to binaryString
         String binaryData = null;
         parseMessageType(binaryData);
     }
@@ -163,16 +177,24 @@ public class ProtocolManager {
             console.printMessage("ProtocolManager >>> Route to " + destAddr + " already exists.\n");
         } else {
             // TODO nextHop and preList
-            updateRoutingTable(destAddr, destSeqNum, null, hopCount, null);
+            updateRoutingTable(destAddr, destSeqNum, null, hopCount, this.prevHop);
 
         }
 
         if (destAddr.equals(ownAddr)) {
             console.printMessage("ProtocolManager >>> RREQ for own address received. Sending RREP.\n");
-            // TODO process message and send RREP
-        }
+            // TODO process message
+            // TODO: Generate new RREP
+            // TODO: Send RREP
+        } else{
+            // Add to Reverse Routing Table
+            updateReverseRoutingTable(destAddr, sourceAddr, reqID, hopCount, this.prevHop);
+            // TODO Increase Hop Count of RREQ
+            // TODO: Set own Addr to last hop
+            // TODO: Broadcast updated RREQ
 
-        // TODO: Send RREP or Forward RREQ
+
+        }
     }
 
 
@@ -206,12 +228,19 @@ public class ProtocolManager {
         String destAddrBinary = String.format("%16s", Integer.toBinaryString(Integer.parseInt(destAddr, 16))).replace(' ', '0');
         String ownAddrBinary = String.format("%16s", Integer.toBinaryString(Integer.parseInt(ownAddr, 16))).replace(' ', '0');
         return new RREQ(
+                // Flags
                 new BitString("000000"),
+                // Hop Count
                 new BitString("000000"),
+                // Req ID
                 new BitString(localReqAsBinary),
+                // Dest Addr
                 new BitString(destAddrBinary),
+                // Dest Seq
                 new BitString("00000000"),
+                // Origin Addr
                 new BitString(ownAddrBinary),
+                // Origin Seq
                 new BitString(localSeqAsBinary)
         );
     }
@@ -224,7 +253,7 @@ public class ProtocolManager {
         return Base64.getDecoder().decode(base64String);
     }
 
-    // Convert a RREQ to a byte array
+    // Convert a RREQ to BitString
     public BitString RREQtoBitString(RREQ routeRequest) {
         return new BitString(
                 routeRequest.getType().toString() +
