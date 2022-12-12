@@ -12,8 +12,14 @@ import java.util.Base64;
 public class TestingClass {
 
     public static void main(String[] args) throws InterruptedException {
-        LoraCLI loraCLI = new LoraCLI();
+
+        // LoraCLI loraCLI = new LoraCLI();
         // loraCLI.start();
+
+        String test = "000001000000000000000001110111011101110100000000101011011101111100000001";
+        ProtocolManager protocolManager = new ProtocolManager(null);
+        protocolManager.parseMessageType(test);
+
 
         String destAddr = "FFFF";
         String sourceAddr = "ADDD";
@@ -27,14 +33,12 @@ public class TestingClass {
 
         String d_seq = String.format("%8s", Integer.toBinaryString(destSeq_)).replace(' ', '0');
         String s_seq = String.format("%8s", Integer.toBinaryString(sourceSeq_)).replace(' ', '0');
+        System.out.println("\n*******************************************");
         System.out.println("Dest Seq Binary: " + d_seq);
         System.out.println("Source Seq Binary: " + s_seq);
 
-
-
-
-
-        BitString type = new BitString("000010");
+        // RREQ CONSTRUCTION
+        BitString type = new BitString("000001");
         BitString flags = new BitString("000000");
         BitString hopCount = new BitString("000001");
         BitString reqID = new BitString("000000");
@@ -43,7 +47,7 @@ public class TestingClass {
         BitString sourceAddrS = new BitString(sourceAddrBinary);
         BitString sourceSeq = new BitString(s_seq);
 
-
+        // ENCODING AND DECODING
         BitString payload = new BitString(type.toString() + flags + hopCount + reqID + destAddrS + destSeq + sourceAddrS + sourceSeq);
         // get total length of payload
         int payloadLength = payload.getLength();
@@ -55,6 +59,7 @@ public class TestingClass {
         // print encoded payload
         System.out.println("Encoded Base64 String: " + encodedPayload);
 
+        // INTERPRETATION OF RECEIVED MESSAGE
         // decode payload from base64
         byte[] decodedPayload = Base64.getDecoder().decode(encodedPayload);
         // print decoded payload
