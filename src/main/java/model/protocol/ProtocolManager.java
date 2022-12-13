@@ -55,7 +55,7 @@ public class ProtocolManager {
     }
 
     private void updateRoutingTable(String destAddr, String destSeqNum, String nextHop, String hopCount, String prev) {
-        // TODO: Get PreList from RoutingTable
+        // TODO: Get Pre from RoutingTable
         // TODO: Get nextHop
         RoutingEntry entry = new RoutingEntry(destAddr, destSeqNum, nextHop, hopCount, prev);
         // Re-Check if entry already exists
@@ -69,14 +69,14 @@ public class ProtocolManager {
 
     }
     private void updateReverseRoutingTable(String destAddr, String sourceAddr, String req, String hopCount, String prevHop) {
-        ReverseRoutingEntry entry = new ReverseRoutingEntry(destAddr, sourceAddr, req, hopCount, prevHop);
+        ReverseRoutingEntry entry = new ReverseRoutingEntry(destAddr, sourceAddr, hopCount, prevHop);
         // Re-Check if entry already exists
         if (routingTableManager.getReverseRoutingTable().contains(entry)) {
             console.printMessage("ProtocolManager >>> Reverse Routing Table already contains entry: " + entry);
         } else {
             // Add entry
             console.printMessage("ProtocolManager >>> Adding entry to reverse routing table: " + entry);
-            routingTableManager.addReverseRoutingEntry(destAddr, sourceAddr, req, hopCount, prevHop);
+            routingTableManager.addReverseRoutingEntry(destAddr, sourceAddr, hopCount, prevHop);
         }
     }
 
@@ -114,6 +114,7 @@ public class ProtocolManager {
         console.printMessage("ProtocolManager >>> Sending RREP: " + rrep.toString() + " with length " + rrep.getLength() + "bits.\n");
         String encodedRREP = encodeBase64(rrep.toNumber().toByteArray());
         serialManager.writeData(encodedRREP);
+
 
     }
 
@@ -167,6 +168,7 @@ public class ProtocolManager {
     public void processRREQ(String incomingMessage) {
         // Parse relevant data
         String sourceAddr = incomingMessage.substring(incomingMessage.length() - 24, incomingMessage.length() - 8);
+        String sourceSeqNum = incomingMessage.substring(incomingMessage.length() - 8);
         String destAddr = incomingMessage.substring(incomingMessage.length() - 48, incomingMessage.length() - 32);
         String reqID = incomingMessage.substring(incomingMessage.length() - 54, incomingMessage.length() - 48);
         String destSeqNum = incomingMessage.substring(incomingMessage.length() - 32, incomingMessage.length() - 24);
@@ -177,24 +179,36 @@ public class ProtocolManager {
         if (routingEntry != null) {
             console.printMessage("ProtocolManager >>> Route to " + destAddr + " already exists.\n");
         } else {
-            // TODO nextHop and preList
             updateRoutingTable(destAddr, destSeqNum, null, hopCount, this.prevHop);
 
         }
 
         if (destAddr.equals(ownAddr)) {
             console.printMessage("ProtocolManager >>> RREQ for own address received. Sending RREP.\n");
+
+            // RREP reply = new RREP();
+
             // TODO process message
             // TODO: Generate new RREP
             // TODO: Send RREP
         } else{
             // Add to Reverse Routing Table
             updateReverseRoutingTable(destAddr, sourceAddr, reqID, hopCount, this.prevHop);
-            // TODO Increase Hop Count of RREQ
-            // TODO: Set own Addr to last hop
-            // TODO: Broadcast updated RREQ
-
-
+            // Update HopCount
+            int hopCountInt = Integer.parseInt(hopCount, 2);
+            hopCountInt++;
+            hopCount = String.format("%06d", Integer.parseInt(Integer.toBinaryString(hopCountInt)));
+            // Broadcast updated RREQ
+            RREQ newRREQ = new RREQ(
+                    new BitString("000000"),
+                    new BitString(hopCount),
+                    new BitString(reqID),
+                    new BitString(destAddr),
+                    new BitString(destSeqNum),
+                    new BitString(sourceAddr),
+                    new BitString(sourceSeqNum)
+            );
+            sendRREQBroadcast(newRREQ);
         }
     }
 
