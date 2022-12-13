@@ -1,64 +1,67 @@
 package model.messageTypes;
 
+import org.uncommons.maths.binary.BitString;
+
 public class RREP {
 
-    private final byte type = 2;
-    private byte lifetime;
-    private byte destAddr;
-    private byte destSeq;
-    private byte sourceAddr;
-    private byte hopCount;
+    private final BitString type = new BitString("000010");
+    private BitString lifetime;
+    private BitString destAddr;
+    private BitString destSeq;
+    private BitString sourceAddr;
 
-    public RREP(byte lifetime, byte destAddr, byte destSeq, byte hopCount, byte sourceAddr) {
+    private BitString hopCount;
+
+    public RREP(BitString lifetime, BitString destAddr, BitString destSeq, BitString sourceAddr, BitString hopCount) {
         this.lifetime = lifetime;
         this.destAddr = destAddr;
         this.destSeq = destSeq;
-        this.hopCount = hopCount;
         this.sourceAddr = sourceAddr;
+        this.hopCount = hopCount;
     }
 
 
-    public byte getType() {
+    public BitString getType() {
         return type;
     }
 
-    public byte getLifetime() {
+    public BitString getLifetime() {
         return lifetime;
     }
 
-    public void setLifetime(byte lifetime) {
+    public void setLifetime(BitString lifetime) {
         this.lifetime = lifetime;
     }
 
-    public byte getDestAddr() {
+    public BitString getDestAddr() {
         return destAddr;
     }
 
-    public void setDestAddr(byte destAddr) {
+    public void setDestAddr(BitString destAddr) {
         this.destAddr = destAddr;
     }
 
-    public byte getDestSeq() {
+    public BitString getDestSeq() {
         return destSeq;
     }
 
-    public void setDestSeq(byte destSeq) {
+    public void setDestSeq(BitString destSeq) {
         this.destSeq = destSeq;
     }
 
-    public byte getSourceAddr() {
+    public BitString getSourceAddr() {
         return sourceAddr;
     }
 
-    public void setSourceAddr(byte sourceAddr) {
+    public void setSourceAddr(BitString sourceAddr) {
         this.sourceAddr = sourceAddr;
     }
 
-    public byte getHopCount() {
+    public BitString getHopCount() {
         return hopCount;
     }
 
-    public void setHopCount(byte hopCount) {
+    public void setHopCount(BitString hopCount) {
         this.hopCount = hopCount;
     }
 
