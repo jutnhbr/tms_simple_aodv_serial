@@ -110,9 +110,10 @@ public class ProtocolManager {
     }
 
     public void sendRREP(RREP routeReply) {
-        byte[] repBytes = RREPtoBytes(routeReply);
-        String repString = Base64.getEncoder().withoutPadding().encodeToString(repBytes);
-        serialManager.writeData(repString);
+        BitString rrep = RREPtoBitString(routeReply);
+        console.printMessage("ProtocolManager >>> Sending RREP: " + rrep.toString() + " with length " + rrep.getLength() + "bits.\n");
+        String encodedRREP = encodeBase64(rrep.toNumber().toByteArray());
+        serialManager.writeData(encodedRREP);
 
     }
 
@@ -198,7 +199,34 @@ public class ProtocolManager {
     }
 
 
-    public void processRREP(byte[] incomingMessageBytes) {
+    public void processRREP(String incomingMessage,String addrFrom) {
+
+        String lifeTime = incomingMessage.substring(incomingMessage.length()-32,incomingMessage.length()-66);
+        String destinationAdress = incomingMessage.substring(incomingMessage.length()-48,incomingMessage.length()-32);
+        String destinationSequence = incomingMessage.substring(incomingMessage.length()-32,incomingMessage.length()-24);
+        String originatorAdress = incomingMessage.substring(incomingMessage.length()-24,incomingMessage.length()-8);
+        String hopCount = incomingMessage.substring(incomingMessage.length()-8);
+
+
+        RREP rrep = new RREP(new BitString(lifeTime),new BitString(destinationAdress),new BitString(destinationSequence)
+                ,new BitString(hopCount),new BitString(originatorAdress));
+
+        if (rrep.getDestAddr().equals(ownAddr)){
+            routingTableManager.addRoutingEntry(originatorAdress,destinationSequence,addrFrom,
+                    hopCount,"EMPTY");
+        } else {
+            BitString bitString = rrep.getHopCount();
+            // parse to int
+            int type__ = Integer.parseInt(bitString.toString(), 2);
+
+            type__ = type__ + 1;
+            // Convert to binary
+            String binary = String.format("%6s", Integer.toBinaryString(type__)).replace(' ', '0');
+            bitString = new BitString(binary);
+            rrep.setHopCount(bitString);
+
+        }
+
 
     }
 
@@ -267,15 +295,15 @@ public class ProtocolManager {
         );
     }
 
-    public byte[] RREPtoBytes(RREP routeReply) {
-        return new byte[]{
-                routeReply.getType(),
-                routeReply.getDestAddr(),
-                routeReply.getDestSeq(),
-                routeReply.getHopCount(),
-                routeReply.getSourceAddr(),
+    public BitString RREPtoBitString(RREP routeReply) {
+        return new BitString(
+                routeReply.getType().toString() +
+                routeReply.getDestAddr() +
+                routeReply.getDestSeq()+
+                routeReply.getHopCount()+
+                routeReply.getSourceAddr()
 
-        };
+        );
     }
 
     public RoutingTableManager getRoutingTableManager() {
