@@ -2,61 +2,52 @@ package model.routing;
 
 public class ReverseRoutingEntry {
 
-    private byte destAddr;
-    private byte sourceAddr;
-    private byte hopCount;
-    private byte prev;
-    private byte req;
+    private String destAddr;
+    private String sourceAddr;
+    private String hopCount;
+    private String prev;
 
 
-    public ReverseRoutingEntry(byte destAddr, byte sourceAddr, byte hopCount, byte prev, byte req) {
+    public ReverseRoutingEntry(String destAddr, String sourceAddr, String hopCount, String prev) {
         this.destAddr = destAddr;
         this.sourceAddr = sourceAddr;
         this.hopCount = hopCount;
         this.prev = prev;
-        this.req = req;
     }
 
 
-    public byte getDestAddr() {
+    public String getDestAddr() {
         return destAddr;
     }
 
-    public void setDestAddr(byte destAddr) {
+    public void setDestAddr(String destAddr) {
         this.destAddr = destAddr;
     }
 
-    public byte getSourceAddr() {
+    public String getSourceAddr() {
         return sourceAddr;
     }
 
-    public void setSourceAddr(byte sourceAddr) {
+    public void setSourceAddr(String sourceAddr) {
         this.sourceAddr = sourceAddr;
     }
 
-    public byte getHopCount() {
+    public String getHopCount() {
         return hopCount;
     }
 
-    public void setHopCount(byte hopCount) {
+    public void setHopCount(String hopCount) {
         this.hopCount = hopCount;
     }
 
-    public byte getPrev() {
+    public String getPrev() {
         return prev;
     }
 
-    public void setPrev(byte prev) {
+    public void setPrev(String prev) {
         this.prev = prev;
     }
 
-    public byte getReq() {
-        return req;
-    }
-
-    public void setReq(byte req) {
-        this.req = req;
-    }
 
     @Override
     public String toString() {
@@ -65,7 +56,6 @@ public class ReverseRoutingEntry {
                 ", sourceAddr=" + sourceAddr +
                 ", hopCount=" + hopCount +
                 ", prev=" + prev +
-                ", req=" + req +
                 '}';
     }
 }

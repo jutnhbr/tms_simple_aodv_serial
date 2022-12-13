@@ -15,7 +15,7 @@ public class LoraCLI {
     private final SerialManager serialManager = new SerialManager();
     private final ReadingThread readingThread = new ReadingThread(serialManager, true);
     private final MenuFactory menuFactory = new MenuFactory();
-    private final ProtocolManager protocolManager = new ProtocolManager();
+    private final ProtocolManager protocolManager = new ProtocolManager(serialManager);
 
     public synchronized void start() throws InterruptedException {
 
@@ -50,11 +50,17 @@ public class LoraCLI {
                     Thread.sleep(2500);
                     break;
                 case 4:
-                    byte destAddr = Byte.parseByte(console.readStringFromInput("Enter Destination Address: "));
+                    String destAddr = console.readStringFromInput("Enter Destination Address (e.g. AAAA): ");
                     RREQ req = protocolManager.generateRREQ(destAddr);
                     protocolManager.sendRREQBroadcast(req);
                     break;
                 case 5:
+                    console.printMessage(
+                            "****************************ROUTING TABLE****************************\n"
+                            + protocolManager.getRoutingTableManager().getRoutingTable().toString()
+                            + "\n************************REVERSE ROUTING TABLE************************\n"
+                            + protocolManager.getRoutingTableManager().getReverseRoutingTable().toString()
+                            + "\n*********************************************************************\n");
                     break;
                 case 0:
                     console.printErrMessage("Exiting...");

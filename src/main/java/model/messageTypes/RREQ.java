@@ -1,17 +1,19 @@
 package model.messageTypes;
 
+import org.uncommons.maths.binary.BitString;
+
 public class RREQ {
 
-    private final byte type = 1;
-    private byte flags;
-    private byte hopCount;
-    private byte req;
-    private byte destAddr;
-    private byte destSeq;
-    private byte sourceAddr;
-    private byte sourceSeq;
+    private final BitString type = new BitString("000001");
+    private BitString flags;
+    private BitString hopCount;
+    private BitString req;
+    private BitString destAddr;
+    private BitString destSeq;
+    private BitString sourceAddr;
+    private BitString sourceSeq;
 
-    public RREQ(byte flags, byte hopCount, byte req, byte destAddr, byte destSeq, byte sourceAddr, byte sourceSeq) {
+    public RREQ(BitString flags, BitString hopCount, BitString req, BitString destAddr, BitString destSeq, BitString sourceAddr, BitString sourceSeq) {
         this.flags = flags;
         this.hopCount = hopCount;
         this.req = req;
@@ -21,65 +23,44 @@ public class RREQ {
         this.sourceSeq = sourceSeq;
     }
 
-    public byte getType() {
+    public BitString getType() {
         return type;
     }
 
-    public byte getFlags() {
+    public BitString getFlags() {
         return flags;
     }
 
-    public void setFlag(byte flag) {
-        this.flags = flag;
-    }
 
-    public byte getHopCount() {
+    public BitString getHopCount() {
         return hopCount;
     }
 
-    public void setHopCount(byte hopCount) {
-        this.hopCount = hopCount;
-    }
 
-    public byte getReq() {
+    public BitString getReq() {
         return req;
     }
 
-    public void setReq(byte req) {
-        this.req = req;
-    }
 
-    public byte getDestAddr() {
+    public BitString getDestAddr() {
         return destAddr;
     }
 
-    public void setDestAddr(byte destAddr) {
-        this.destAddr = destAddr;
-    }
 
-    public byte getDestSeq() {
+    public BitString getDestSeq() {
         return destSeq;
     }
 
-    public void setDestSeq(byte destSeq) {
-        this.destSeq = destSeq;
-    }
 
-    public byte getSourceAddr() {
+    public BitString getSourceAddr() {
         return sourceAddr;
     }
 
-    public void setSourceAddr(byte sourceAddr) {
-        this.sourceAddr = sourceAddr;
-    }
 
-    public byte getSourceSeq() {
+    public BitString getSourceSeq() {
         return sourceSeq;
     }
 
-    public void setSourceSeq(byte sourceSeq) {
-        this.sourceSeq = sourceSeq;
-    }
 
     @Override
     public String toString() {

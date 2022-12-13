@@ -12,8 +12,23 @@ import java.util.Base64;
 public class TestingClass {
 
     public static void main(String[] args) throws InterruptedException {
-        LoraCLI loraCLI = new LoraCLI();
+
+        // LoraCLI loraCLI = new LoraCLI();
         // loraCLI.start();
+
+        BitString bitString = new BitString("000001");
+        // parse to int
+        int type__ = Integer.parseInt(bitString.toString(), 2);
+        System.out.println(type__);
+        type__ = type__ + 1;
+        // Convert to binary
+       String binary = String.format("%6s", Integer.toBinaryString(type__)).replace(' ', '0');
+       bitString = new BitString(binary);
+        System.out.println(bitString.toString());
+
+
+
+
 
         String destAddr = "FFFF";
         String sourceAddr = "ADDD";
@@ -27,14 +42,12 @@ public class TestingClass {
 
         String d_seq = String.format("%8s", Integer.toBinaryString(destSeq_)).replace(' ', '0');
         String s_seq = String.format("%8s", Integer.toBinaryString(sourceSeq_)).replace(' ', '0');
+        System.out.println("\n*******************************************");
         System.out.println("Dest Seq Binary: " + d_seq);
         System.out.println("Source Seq Binary: " + s_seq);
 
-
-
-
-
-        BitString type = new BitString("000010");
+        // RREQ CONSTRUCTION
+        BitString type = new BitString("000001");
         BitString flags = new BitString("000000");
         BitString hopCount = new BitString("000001");
         BitString reqID = new BitString("000000");
@@ -43,7 +56,7 @@ public class TestingClass {
         BitString sourceAddrS = new BitString(sourceAddrBinary);
         BitString sourceSeq = new BitString(s_seq);
 
-
+        // ENCODING AND DECODING
         BitString payload = new BitString(type.toString() + flags + hopCount + reqID + destAddrS + destSeq + sourceAddrS + sourceSeq);
         // get total length of payload
         int payloadLength = payload.getLength();
@@ -55,6 +68,7 @@ public class TestingClass {
         // print encoded payload
         System.out.println("Encoded Base64 String: " + encodedPayload);
 
+        // INTERPRETATION OF RECEIVED MESSAGE
         // decode payload from base64
         byte[] decodedPayload = Base64.getDecoder().decode(encodedPayload);
         // print decoded payload
@@ -87,6 +101,16 @@ public class TestingClass {
         // get remaining bits
         String type_ = binaryStr.substring(0, binaryStr.length() - 66);
         System.out.println("Type " + Integer.parseInt(type_,2));
+
+        System.out.println("*******************************************");
+
+
+        String lora = "LR,XXXX,XX,";
+        String pl = lora + encodedPayload;
+        System.out.println("Encoded Payload with Lora Addition --> " + pl);
+        ProtocolManager protocolManager = new ProtocolManager(null);
+        // protocolManager.parseMessageType(test);
+        protocolManager.receiveIncomingPayload(pl.getBytes());
 
 
     }
