@@ -16,6 +16,17 @@ public class TestingClass {
         // LoraCLI loraCLI = new LoraCLI();
         // loraCLI.start();
 
+        BitString bitString = new BitString("000001");
+        // parse to int
+        int type__ = Integer.parseInt(bitString.toString(), 2);
+        System.out.println(type__);
+        type__ = type__ + 1;
+        // Convert to binary
+       String binary = String.format("%6s", Integer.toBinaryString(type__)).replace(' ', '0');
+       bitString = new BitString(binary);
+        System.out.println(bitString.toString());
+
+
 
 
 

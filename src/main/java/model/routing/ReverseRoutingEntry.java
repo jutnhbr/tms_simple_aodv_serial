@@ -6,15 +6,13 @@ public class ReverseRoutingEntry {
     private String sourceAddr;
     private String hopCount;
     private String prev;
-    private String req;
 
 
-    public ReverseRoutingEntry(String destAddr, String sourceAddr, String hopCount, String prev, String req) {
+    public ReverseRoutingEntry(String destAddr, String sourceAddr, String hopCount, String prev) {
         this.destAddr = destAddr;
         this.sourceAddr = sourceAddr;
         this.hopCount = hopCount;
         this.prev = prev;
-        this.req = req;
     }
 
 
@@ -50,13 +48,6 @@ public class ReverseRoutingEntry {
         this.prev = prev;
     }
 
-    public String getReq() {
-        return req;
-    }
-
-    public void setReq(String req) {
-        this.req = req;
-    }
 
     @Override
     public String toString() {
@@ -65,7 +56,6 @@ public class ReverseRoutingEntry {
                 ", sourceAddr=" + sourceAddr +
                 ", hopCount=" + hopCount +
                 ", prev=" + prev +
-                ", req=" + req +
                 '}';
     }
 }
