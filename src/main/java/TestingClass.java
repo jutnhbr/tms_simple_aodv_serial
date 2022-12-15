@@ -1,4 +1,6 @@
 import control.LoraCLI;
+import control.TestEnvironment;
+import model.SerialManager;
 import model.messageTypes.RREQ;
 import model.protocol.ProtocolManager;
 import org.uncommons.maths.binary.BitString;
@@ -13,8 +15,9 @@ public class TestingClass {
 
     public static void main(String[] args) throws InterruptedException {
 
-        // LoraCLI loraCLI = new LoraCLI();
-        // loraCLI.start();
+        SerialManager serialTester = new SerialManager();
+        LoraCLI loraCLI = new LoraCLI();
+        loraCLI.start();
 
         BitString bitString = new BitString("000001");
         // parse to int
@@ -108,9 +111,9 @@ public class TestingClass {
         String lora = "LR,XXXX,XX,";
         String pl = lora + encodedPayload;
         System.out.println("Encoded Payload with Lora Addition --> " + pl);
-        ProtocolManager protocolManager = new ProtocolManager(null);
+        ProtocolManager protocolManager = new ProtocolManager(null, null);
         // protocolManager.parseMessageType(test);
-        protocolManager.receiveIncomingPayload(pl.getBytes());
+        // protocolManager.receiveIncomingPayload(pl.getBytes());
 
 
     }
