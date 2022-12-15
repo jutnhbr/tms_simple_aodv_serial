@@ -15,7 +15,6 @@ public class TestingClass {
 
     public static void main(String[] args) throws InterruptedException {
 
-        SerialManager serialTester = new SerialManager();
         LoraCLI loraCLI = new LoraCLI();
         loraCLI.start();
 
@@ -25,12 +24,9 @@ public class TestingClass {
         System.out.println(type__);
         type__ = type__ + 1;
         // Convert to binary
-       String binary = String.format("%6s", Integer.toBinaryString(type__)).replace(' ', '0');
-       bitString = new BitString(binary);
+        String binary = String.format("%6s", Integer.toBinaryString(type__)).replace(' ', '0');
+        bitString = new BitString(binary);
         System.out.println(bitString.toString());
-
-
-
 
 
         String destAddr = "FFFF";
@@ -64,7 +60,7 @@ public class TestingClass {
         // get total length of payload
         int payloadLength = payload.getLength();
         // print payload
-        System.out.println("Payload Binary: "+ payload);
+        System.out.println("Payload Binary: " + payload);
         System.out.println("Payload Length: " + payloadLength);
         // encode payload to base64
         String encodedPayload = Base64.getEncoder().encodeToString(payload.toNumber().toByteArray());
@@ -103,7 +99,7 @@ public class TestingClass {
         System.out.println("Flags " + flags_);
         // get remaining bits
         String type_ = binaryStr.substring(0, binaryStr.length() - 66);
-        System.out.println("Type " + Integer.parseInt(type_,2));
+        System.out.println("Type " + Integer.parseInt(type_, 2));
 
         System.out.println("*******************************************");
 
@@ -111,6 +107,11 @@ public class TestingClass {
         String lora = "LR,XXXX,XX,";
         String pl = lora + encodedPayload;
         System.out.println("Encoded Payload with Lora Addition --> " + pl);
+        String pload = pl.split(",")[3];
+        System.out.println("Payload --> " + pload);
+        byte[] decodedPayload_ = Base64.getDecoder().decode(pload);
+        System.out.println("Decoded Payload Bytes: " + Arrays.toString(decodedPayload_));
+
         ProtocolManager protocolManager = new ProtocolManager(null, null);
         // protocolManager.parseMessageType(test);
         // protocolManager.receiveIncomingPayload(pl.getBytes());

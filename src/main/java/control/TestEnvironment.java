@@ -1,8 +1,11 @@
 package control;
 
 import model.SerialManager;
+import org.uncommons.maths.binary.BitString;
 import threads.ParseTesterThread;
 import view.Console;
+
+import java.util.Base64;
 
 public class TestEnvironment {
 
@@ -15,10 +18,21 @@ public class TestEnvironment {
         // ParseTesterThread test = new ParseTesterThread(serialTester);
         // test.start();
         // console.printMessage("Tester is running ...\n");
+        BitString payloadRREQ = new BitString("000001000000000001000000111111111111111100000001101011011101110100011001");
+        BitString payloadRREP = new BitString("000010000000000001000000111111111111111100000001101011011101110100011001");
+        String encodedPayload = Base64.getEncoder().encodeToString(payloadRREQ.toNumber().toByteArray());
+        String encodedPayload2 = Base64.getEncoder().encodeToString(payloadRREP.toNumber().toByteArray());
+        String lora = "LR,XXXX,XX,";
+        String message1 = lora + encodedPayload;
+        String message2 = lora + encodedPayload2;
+        System.out.println("Payload for RREQ -->" + message1);
+        System.out.println("Payload for RREP -->" + message2);
         Thread.sleep(4000);
-        serialTester.writeData("LR,XXXX,XX,000001000000000001000000111111111111111100000001101011011101110100011001");
-
-
+        serialTester.writeData(message1);
+        Thread.sleep(4000);
+        serialTester.writeData(message1);
+        Thread.sleep(4000);
+        serialTester.writeData(message2);
 
 
     }
