@@ -15,7 +15,7 @@ public class LoraCLI {
     private final SerialManager serialManager = new SerialManager();
     private final ReadingThread readingThread = new ReadingThread(serialManager, true);
     private final MenuFactory menuFactory = new MenuFactory();
-    private final ProtocolManager protocolManager = new ProtocolManager(serialManager);
+    private final ProtocolManager protocolManager = new ProtocolManager(serialManager, readingThread);
 
     public synchronized void start() throws InterruptedException {
 
@@ -39,8 +39,9 @@ public class LoraCLI {
                         serialManager.connect(serialManager.getPortByName(console.readStringFromInput("Enter Port Name: ")));
                         console.printMessage(serialManager.getActivePort().getSystemPortName().toUpperCase() + " | " + serialManager.getActivePort().getDescriptivePortName() + " is now open.\n");
                         readingThread.start();
+                        // protocolManager.run();
+                        break;
                     }
-                    break;
                 case 3:
                     console.printMessage("Configuring RX Mode ... \n");
                     serialManager.writeData(AT.AT_RX.getCommand());

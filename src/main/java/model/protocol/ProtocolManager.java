@@ -7,15 +7,14 @@ import model.routing.ReverseRoutingEntry;
 import model.routing.RoutingEntry;
 import model.routing.RoutingTableManager;
 import org.uncommons.maths.binary.BitString;
+import threads.ReadingThread;
 import view.Console;
 
 import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.List;
 import java.util.Objects;
 
-public class ProtocolManager {
+public class ProtocolManager  {
 
     // Node
     private final String ownAddr = "ADDF";
@@ -24,18 +23,20 @@ public class ProtocolManager {
     private int localReq = 0;
     private String prevHop;
     // Network Parameters
-    private int RREQRetries = 0;
+    //private int RREQRetries = 0;
     private static final int RREQ_RETRIES_MAX = 3;
     // Config Stuff
     private final RoutingTableManager routingTableManager = new RoutingTableManager();
+    private final ReadingThread readingThread;
     private final SerialManager serialManager;
     private final Console console = new Console();
 
     /*
      * Init on start
      */
-    public ProtocolManager(SerialManager serialManager) {
+    public ProtocolManager(SerialManager serialManager, ReadingThread readingThread) {
         this.serialManager = serialManager;
+        this.readingThread = readingThread;
         init();
     }
 
@@ -55,8 +56,6 @@ public class ProtocolManager {
     }
 
     private void updateRoutingTable(String destAddr, String destSeqNum, String nextHop, String hopCount, String prev) {
-        // TODO: Get Pre from RoutingTable
-        // TODO: Get nextHop
         RoutingEntry entry = new RoutingEntry(destAddr, destSeqNum, nextHop, hopCount, prev);
         // Re-Check if entry already exists
         if (routingTableManager.getRoutingTable().contains(entry)) {
@@ -68,7 +67,8 @@ public class ProtocolManager {
         }
 
     }
-    private void updateReverseRoutingTable(String destAddr, String sourceAddr, String req, String hopCount, String prevHop) {
+
+    private void updateReverseRoutingTable(String destAddr, String sourceAddr, String hopCount, String prevHop) {
         ReverseRoutingEntry entry = new ReverseRoutingEntry(destAddr, sourceAddr, hopCount, prevHop);
         // Re-Check if entry already exists
         if (routingTableManager.getReverseRoutingTable().contains(entry)) {
@@ -102,17 +102,21 @@ public class ProtocolManager {
      *
      */
 
-    public void sendRREQBroadcast(RREQ routeRequest) {
+    public void sendRREQBroadcast(RREQ routeRequest) throws InterruptedException {
         BitString rreq = RREQtoBitString(routeRequest);
         console.printMessage("ProtocolManager >>> Sending RREQ: " + rreq.toString() + " with length " + rreq.getLength() + "bits.\n");
         String encodedRREQ = encodeBase64(rreq.toNumber().toByteArray());
+        serialManager.writeData("AT+SEND=9");
+        Thread.sleep(2000);
         serialManager.writeData(encodedRREQ);
     }
 
-    public void sendRREP(RREP routeReply) {
+    public void sendRREP(RREP routeReply) throws InterruptedException {
         BitString rrep = RREPtoBitString(routeReply);
         console.printMessage("ProtocolManager >>> Sending RREP: " + rrep.toString() + " with length " + rrep.getLength() + "bits.\n");
         String encodedRREP = encodeBase64(rrep.toNumber().toByteArray());
+        serialManager.writeData("AT+SEND=9");
+        Thread.sleep(2000);
         serialManager.writeData(encodedRREP);
 
 
@@ -136,28 +140,45 @@ public class ProtocolManager {
      *
      */
 
-    public void receiveIncomingPayload(byte[] payload) {
-        // TODO Receive Bytes from SerialManager / Queue
-        // Split LR,XXXX,XX, from Payload
-        String[] payloadSplit = new String(payload).split(",");
-        // Save [1] XXXX as prevHop
-        this.prevHop = payloadSplit[1];
-        // Save [3] the rest as payload
-        String payloadString = payloadSplit[3];
-        byte[] payloadBytes = decodeBase64(payloadString);
-        String binaryData = new BigInteger(1, payloadBytes).toString(2);
-        parseMessageType(binaryData);
+
+    public void receiveIncomingPayload() throws InterruptedException {
+        String payload;
+        // Receive Bytes from SerialManager / Queue
+        if (readingThread.getCommandQueue().peek() != null) {
+            payload = readingThread.getCommandQueue().poll();
+            // Split LR,XXXX,XX, from Payload
+            assert payload != null;
+            String[] payloadSplit = payload.split(",");
+
+            // Check if payload contains all necessary data
+            if (payloadSplit.length < 4) {
+                console.printMessage("ProtocolManager >>> Received invalid payload: " + payload);
+                return;
+            }
+            // Save [1] XXXX as prevHop
+            this.prevHop = payloadSplit[1];
+            // Save [3] the rest as payload
+            String payloadString = payloadSplit[3];
+            byte[] payloadBytes = decodeBase64(payloadString);
+            String binaryData = new BigInteger(1, payloadBytes).toString(2);
+            parseMessageType(binaryData);
+        } else {
+            Thread.sleep(2000);
+        }
     }
 
 
-    public void parseMessageType(String incomingMessage) {
+    public void parseMessageType(String incomingMessage) throws InterruptedException {
         String msgType = incomingMessage.substring(0, incomingMessage.length() - 66);
         switch (Integer.parseInt(msgType, 2)) {
             case 1 -> {
                 console.printMessage("ProtocolManager >>> Received RREQ.\n");
                 processRREQ(incomingMessage);
             }
-            case 2 -> console.printMessage("ProtocolManager >>> Received RREP.\n");
+            case 2 -> {
+                console.printMessage("ProtocolManager >>> Received RREP.\n");
+                processRREP(incomingMessage, this.prevHop);
+            }
             case 3 -> console.printMessage("ProtocolManager >>> Received ACK.\n");
             case 4 -> console.printMessage("ProtocolManager >>> Received RERR.\n");
             case 5 -> console.printMessage("ProtocolManager >>> Received DATA.\n");
@@ -165,7 +186,7 @@ public class ProtocolManager {
         }
     }
 
-    public void processRREQ(String incomingMessage) {
+    public void processRREQ(String incomingMessage) throws InterruptedException {
         // Parse relevant data
         String sourceAddr = incomingMessage.substring(incomingMessage.length() - 24, incomingMessage.length() - 8);
         String sourceSeqNum = incomingMessage.substring(incomingMessage.length() - 8);
@@ -191,9 +212,9 @@ public class ProtocolManager {
             // TODO process message
             // TODO: Generate new RREP
             // TODO: Send RREP
-        } else{
+        } else {
             // Add to Reverse Routing Table
-            updateReverseRoutingTable(destAddr, sourceAddr, reqID, hopCount, this.prevHop);
+            updateReverseRoutingTable(destAddr, sourceAddr, hopCount, this.prevHop);
             // Update HopCount
             int hopCountInt = Integer.parseInt(hopCount, 2);
             hopCountInt++;
@@ -213,21 +234,20 @@ public class ProtocolManager {
     }
 
 
-    public void processRREP(String incomingMessage,String addrFrom) {
+    public void processRREP(String incomingMessage, String addrFrom) {
 
-        String lifeTime = incomingMessage.substring(incomingMessage.length()-32,incomingMessage.length()-66);
-        String destinationAdress = incomingMessage.substring(incomingMessage.length()-48,incomingMessage.length()-32);
-        String destinationSequence = incomingMessage.substring(incomingMessage.length()-32,incomingMessage.length()-24);
-        String originatorAdress = incomingMessage.substring(incomingMessage.length()-24,incomingMessage.length()-8);
-        String hopCount = incomingMessage.substring(incomingMessage.length()-8);
+        String lifeTime = incomingMessage.substring(incomingMessage.length() - 32, incomingMessage.length() - 66);
+        String destinationAdress = incomingMessage.substring(incomingMessage.length() - 48, incomingMessage.length() - 32);
+        String destinationSequence = incomingMessage.substring(incomingMessage.length() - 32, incomingMessage.length() - 24);
+        String originatorAdress = incomingMessage.substring(incomingMessage.length() - 24, incomingMessage.length() - 8);
+        String hopCount = incomingMessage.substring(incomingMessage.length() - 8);
 
 
-        RREP rrep = new RREP(new BitString(lifeTime),new BitString(destinationAdress),new BitString(destinationSequence)
-                ,new BitString(hopCount),new BitString(originatorAdress));
+        RREP rrep = new RREP(new BitString(lifeTime), new BitString(destinationAdress), new BitString(destinationSequence)
+                , new BitString(hopCount), new BitString(originatorAdress));
 
-        if (rrep.getDestAddr().equals(ownAddr)){
-            routingTableManager.addRoutingEntry(originatorAdress,destinationSequence,addrFrom,
-                    hopCount,"EMPTY");
+        if (destinationAdress.equals(ownAddr)) {
+            routingTableManager.addRoutingEntry(originatorAdress, destinationSequence, addrFrom, hopCount, "EMPTY");
         } else {
             BitString bitString = rrep.getHopCount();
             // parse to int
@@ -245,11 +265,9 @@ public class ProtocolManager {
     }
 
     public void processRERR(byte[] incomingMessageBytes) {
-        // TODO
     }
 
     public void processACK(byte[] incomingMessageBytes) {
-        // TODO
     }
 
 
@@ -291,6 +309,7 @@ public class ProtocolManager {
         return Base64.getEncoder().encodeToString(bytes);
 
     }
+
     private byte[] decodeBase64(String base64String) {
         return Base64.getDecoder().decode(base64String);
     }
@@ -312,10 +331,10 @@ public class ProtocolManager {
     public BitString RREPtoBitString(RREP routeReply) {
         return new BitString(
                 routeReply.getType().toString() +
-                routeReply.getDestAddr() +
-                routeReply.getDestSeq()+
-                routeReply.getHopCount()+
-                routeReply.getSourceAddr()
+                        routeReply.getDestAddr() +
+                        routeReply.getDestSeq() +
+                        routeReply.getHopCount() +
+                        routeReply.getSourceAddr()
 
         );
     }
@@ -324,16 +343,4 @@ public class ProtocolManager {
         return routingTableManager;
     }
 
-    @Override
-    public String toString() {
-        return "ProtocolManager{" +
-                "ownAddr='" + ownAddr + '\'' +
-                ", localSeqNum=" + localSeqNum +
-                ", localReq=" + localReq +
-                ", RREQRetries=" + RREQRetries +
-                ", routingTableManager=" + routingTableManager +
-                ", serialManager=" + serialManager +
-                ", console=" + console +
-                '}';
-    }
 }
