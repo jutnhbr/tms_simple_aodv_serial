@@ -5,6 +5,7 @@ import data.AT;
 import model.SerialManager;
 import model.messageTypes.RREQ;
 import model.protocol.ProtocolManager;
+import threads.ProtocolThread;
 import threads.ReadingThread;
 import view.Console;
 import view.MenuFactory;
@@ -16,6 +17,7 @@ public class LoraCLI {
     private final ReadingThread readingThread = new ReadingThread(serialManager, true);
     private final MenuFactory menuFactory = new MenuFactory();
     private final ProtocolManager protocolManager = new ProtocolManager(serialManager, readingThread);
+    private final ProtocolThread protocolThread = new ProtocolThread(protocolManager);
 
     public synchronized void start() throws InterruptedException {
 
@@ -39,7 +41,7 @@ public class LoraCLI {
                         serialManager.connect(serialManager.getPortByName(console.readStringFromInput("Enter Port Name: ")));
                         console.printMessage(serialManager.getActivePort().getSystemPortName().toUpperCase() + " | " + serialManager.getActivePort().getDescriptivePortName() + " is now open.\n");
                         readingThread.start();
-                        // protocolManager.run();
+                        protocolThread.start();
                         break;
                     }
                 case 3:

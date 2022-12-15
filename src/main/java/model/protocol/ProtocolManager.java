@@ -14,7 +14,7 @@ import java.math.BigInteger;
 import java.util.Base64;
 import java.util.Objects;
 
-public class ProtocolManager  {
+public class ProtocolManager {
 
     // Node
     private final String ownAddr = "ADDF";
@@ -143,27 +143,31 @@ public class ProtocolManager  {
 
     public void receiveIncomingPayload() throws InterruptedException {
         String payload;
-        // Receive Bytes from SerialManager / Queue
-        if (readingThread.getCommandQueue().peek() != null) {
-            payload = readingThread.getCommandQueue().poll();
-            // Split LR,XXXX,XX, from Payload
-            assert payload != null;
-            String[] payloadSplit = payload.split(",");
 
-            // Check if payload contains all necessary data
-            if (payloadSplit.length < 4) {
-                console.printMessage("ProtocolManager >>> Received invalid payload: " + payload);
-                return;
+        while (true) {
+            if (readingThread.getCommandQueue().peek() != null) {
+                payload = readingThread.getCommandQueue().poll();
+                // Split LR,XXXX,XX, from Payload
+                assert payload != null;
+                String[] payloadSplit = payload.split(",");
+
+                // Check if payload contains all necessary data
+                if (payloadSplit.length < 4) {
+                    console.printMessage("ProtocolManager >>> Received invalid payload: " + payload + "\n");
+                    return;
+                }
+                // Save [1] XXXX as prevHop
+                this.prevHop = payloadSplit[1];
+                // Save [3] the rest as payload
+                String payloadString = payloadSplit[3];
+                payloadString = payloadString.replace("\n", "").replace("\r", "");
+                console.printMessage("ProtocolManager >>> Received payload: " + payloadString + "\n");
+                byte[] payloadBytes = decodeBase64(payloadString);
+                String binaryData = new BigInteger(1, payloadBytes).toString(2);
+                parseMessageType(binaryData);
+            } else {
+                Thread.sleep(2000);
             }
-            // Save [1] XXXX as prevHop
-            this.prevHop = payloadSplit[1];
-            // Save [3] the rest as payload
-            String payloadString = payloadSplit[3];
-            byte[] payloadBytes = decodeBase64(payloadString);
-            String binaryData = new BigInteger(1, payloadBytes).toString(2);
-            parseMessageType(binaryData);
-        } else {
-            Thread.sleep(2000);
         }
     }
 
@@ -172,16 +176,16 @@ public class ProtocolManager  {
         String msgType = incomingMessage.substring(0, incomingMessage.length() - 66);
         switch (Integer.parseInt(msgType, 2)) {
             case 1 -> {
-                console.printMessage("ProtocolManager >>> Received RREQ.\n");
+                console.printMessage("ProtocolManager >>> Payload parsed as RREQ.\n");
                 processRREQ(incomingMessage);
             }
             case 2 -> {
-                console.printMessage("ProtocolManager >>> Received RREP.\n");
+                console.printMessage("ProtocolManager >>> Payload parsed as RREP.\n");
                 processRREP(incomingMessage, this.prevHop);
             }
-            case 3 -> console.printMessage("ProtocolManager >>> Received ACK.\n");
-            case 4 -> console.printMessage("ProtocolManager >>> Received RERR.\n");
-            case 5 -> console.printMessage("ProtocolManager >>> Received DATA.\n");
+            case 3 -> console.printMessage("ProtocolManager >>> Payload parsed as ACK.\n");
+            case 4 -> console.printMessage("ProtocolManager >>> Payload parsed as RERR.\n");
+            case 5 -> console.printMessage("ProtocolManager >>> Payload parsed as DATA.\n");
             default -> console.printErrMessage("ProtocolManager >>> Received unknown message type: " + msgType);
         }
     }
@@ -213,6 +217,7 @@ public class ProtocolManager  {
             // TODO: Generate new RREP
             // TODO: Send RREP
         } else {
+            console.printMessage("ProtocolManager >>> RREQ for other address received. Forwarding...\n");
             // Add to Reverse Routing Table
             updateReverseRoutingTable(destAddr, sourceAddr, hopCount, this.prevHop);
             // Update HopCount
@@ -236,32 +241,32 @@ public class ProtocolManager  {
 
     public void processRREP(String incomingMessage, String addrFrom) {
 
-        String lifeTime = incomingMessage.substring(incomingMessage.length() - 32, incomingMessage.length() - 66);
+        String lifeTime = incomingMessage.substring(incomingMessage.length() - 66, incomingMessage.length() - 48);
         String destinationAdress = incomingMessage.substring(incomingMessage.length() - 48, incomingMessage.length() - 32);
         String destinationSequence = incomingMessage.substring(incomingMessage.length() - 32, incomingMessage.length() - 24);
         String originatorAdress = incomingMessage.substring(incomingMessage.length() - 24, incomingMessage.length() - 8);
         String hopCount = incomingMessage.substring(incomingMessage.length() - 8);
 
-
-        RREP rrep = new RREP(new BitString(lifeTime), new BitString(destinationAdress), new BitString(destinationSequence)
-                , new BitString(hopCount), new BitString(originatorAdress));
+        RREP rrep = new RREP(new BitString(lifeTime),
+                        new BitString(destinationAdress),
+                        new BitString(destinationSequence),
+                        new BitString(hopCount),
+                        new BitString(originatorAdress));
 
         if (destinationAdress.equals(ownAddr)) {
+            console.printMessage("ProtocolManager >>> RREP for own address received.\n");
             routingTableManager.addRoutingEntry(originatorAdress, destinationSequence, addrFrom, hopCount, "EMPTY");
         } else {
-            BitString bitString = rrep.getHopCount();
+            console.printMessage("ProtocolManager >>> RREP for other address received. Forwarding...\n");
+            BitString bitString = new BitString(hopCount);
             // parse to int
             int type__ = Integer.parseInt(bitString.toString(), 2);
-
             type__ = type__ + 1;
             // Convert to binary
             String binary = String.format("%6s", Integer.toBinaryString(type__)).replace(' ', '0');
             bitString = new BitString(binary);
             rrep.setHopCount(bitString);
-
         }
-
-
     }
 
     public void processRERR(byte[] incomingMessageBytes) {
