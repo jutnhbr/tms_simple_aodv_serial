@@ -4,6 +4,7 @@ import model.SerialManager;
 import view.Console;
 
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ReadingThread extends Thread {
@@ -11,6 +12,7 @@ public class ReadingThread extends Thread {
     private final SerialManager serialManager;
     private final Console console = new Console();
     private final AtomicBoolean isRunning = new AtomicBoolean(false);
+    private final ConcurrentLinkedQueue<String> commandQueue = new ConcurrentLinkedQueue<>();
     private boolean AODV = false;
 
 
@@ -34,9 +36,7 @@ public class ReadingThread extends Thread {
                     // System.out.println("Read " + numRead + " bytes.");
                     // write into a queue
                     if(AODV) {
-                       // TODO: Write readBuffer into a queue to send it to the main Thread
-
-
+                        commandQueue.add(new String(readBuffer, StandardCharsets.UTF_8));
                     }
                     else {
                         console.printMessage(new String(readBuffer, StandardCharsets.UTF_8));
@@ -52,5 +52,9 @@ public class ReadingThread extends Thread {
     }
     public void stopThread() {
         isRunning.set(false);
+    }
+
+    public ConcurrentLinkedQueue<String> getCommandQueue() {
+        return commandQueue;
     }
 }
