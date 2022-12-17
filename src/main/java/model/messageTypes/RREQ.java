@@ -41,6 +41,9 @@ public class RREQ {
         return req;
     }
 
+    public void setReq(BitString req) {
+        this.req = req;
+    }
 
     public BitString getDestAddr() {
         return destAddr;
