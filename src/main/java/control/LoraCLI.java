@@ -47,15 +47,17 @@ public class LoraCLI {
                 case 3:
                     console.printMessage("Configuring RX Mode ... \n");
                     serialManager.writeData(AT.AT_RX.getCommand());
-                    Thread.sleep(2500);
+                    Thread.sleep(2000);
                     console.printMessage("\nConfiguring Config String ...\n");
                     serialManager.writeData(serialManager.getATConfigString());
-                    Thread.sleep(2500);
+                    Thread.sleep(2000);
+                    console.printMessage("\nSet Dest Address to FFFF ...\n");
+                    serialManager.writeData("AT+DEST=FFFF");
+                    Thread.sleep(2000);
                     break;
                 case 4:
                     String destAddr = console.readStringFromInput("Enter Destination Address (e.g. AAAA): ");
-                    RREQ req = protocolManager.generateRREQ(destAddr);
-                    protocolManager.sendRREQBroadcast(req);
+                    protocolManager.generateRREQ(destAddr);
                     break;
                 case 5:
                     console.printMessage(
