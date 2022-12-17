@@ -23,8 +23,14 @@ public class ProtocolManager {
     private int localReq = 0;
     private String prevHop;
     // Network Parameters
-    //private int RREQRetries = 0;
-    private static final int RREQ_RETRIES_MAX = 3;
+    private int RREQRetries = 0;
+    private final int NET_DIAMETER = 0;
+    private final int RREQ_RETRIES_MAX = 2;
+    private final int NODE_TRAVERSAL_TIME = 40;
+    private final int NET_TRAVERSAL_TIME = 2 * NODE_TRAVERSAL_TIME * NET_DIAMETER;
+    private final int PATH_DISCOVERY_TIME = 2 * NET_TRAVERSAL_TIME;
+    private final int ACTIVE_ROUTE_TIMEOUT = 3000;
+    private final int MY_ROUTE_TIMEOUT = 2 * ACTIVE_ROUTE_TIMEOUT;
     // Config Stuff
     private final RoutingTableManager routingTableManager = new RoutingTableManager();
     private final ReadingThread readingThread;
@@ -40,12 +46,6 @@ public class ProtocolManager {
         init();
     }
 
-    /*
-     *
-     * Utils / Init
-     *
-     */
-
     private void init() {
         addSelfToRoutingTable();
     }
@@ -55,6 +55,7 @@ public class ProtocolManager {
         routingTableManager.addRoutingEntry(ownAddr, new BitString("00000000").toString(), ownAddr, new BitString("000000").toString(), null);
     }
 
+    // Update Normal Routing Table
     private void updateRoutingTable(String destAddr, String destSeqNum, String nextHop, String hopCount, String prev) {
         RoutingEntry entry = new RoutingEntry(destAddr, destSeqNum, nextHop, hopCount, prev);
         // Re-Check if entry already exists
@@ -67,7 +68,7 @@ public class ProtocolManager {
         }
 
     }
-
+    // Update Reverse Routing Table
     private void updateReverseRoutingTable(String destAddr, String sourceAddr, String hopCount, String prevHop) {
         ReverseRoutingEntry entry = new ReverseRoutingEntry(destAddr, sourceAddr, hopCount, prevHop);
         // Re-Check if entry already exists
@@ -205,14 +206,11 @@ public class ProtocolManager {
             console.printMessage("ProtocolManager >>> Route to " + destAddr + " already exists.\n");
         } else {
             updateRoutingTable(destAddr, destSeqNum, null, hopCount, this.prevHop);
-
         }
 
         if (destAddr.equals(ownAddr)) {
             console.printMessage("ProtocolManager >>> RREQ for own address received. Sending RREP.\n");
-
             // RREP reply = new RREP();
-
             // TODO process message
             // TODO: Generate new RREP
             // TODO: Send RREP
@@ -220,14 +218,12 @@ public class ProtocolManager {
             console.printMessage("ProtocolManager >>> RREQ for other address received. Forwarding...\n");
             // Add to Reverse Routing Table
             updateReverseRoutingTable(destAddr, sourceAddr, hopCount, this.prevHop);
-            // Update HopCount
-            int hopCountInt = Integer.parseInt(hopCount, 2);
-            hopCountInt++;
-            hopCount = String.format("%06d", Integer.parseInt(Integer.toBinaryString(hopCountInt)));
+            // Increment HopCount
+            BitString newHopCount = incrementFrame(hopCount, "%6s");
             // Broadcast updated RREQ
             RREQ newRREQ = new RREQ(
                     new BitString("000000"),
-                    new BitString(hopCount),
+                    newHopCount,
                     new BitString(reqID),
                     new BitString(destAddr),
                     new BitString(destSeqNum),
@@ -242,30 +238,24 @@ public class ProtocolManager {
     public void processRREP(String incomingMessage, String addrFrom) {
 
         String lifeTime = incomingMessage.substring(incomingMessage.length() - 66, incomingMessage.length() - 48);
-        String destinationAdress = incomingMessage.substring(incomingMessage.length() - 48, incomingMessage.length() - 32);
+        String destinationAddress = incomingMessage.substring(incomingMessage.length() - 48, incomingMessage.length() - 32);
         String destinationSequence = incomingMessage.substring(incomingMessage.length() - 32, incomingMessage.length() - 24);
-        String originatorAdress = incomingMessage.substring(incomingMessage.length() - 24, incomingMessage.length() - 8);
+        String originatorAddress = incomingMessage.substring(incomingMessage.length() - 24, incomingMessage.length() - 8);
         String hopCount = incomingMessage.substring(incomingMessage.length() - 8);
 
         RREP rrep = new RREP(new BitString(lifeTime),
-                        new BitString(destinationAdress),
+                        new BitString(destinationAddress),
                         new BitString(destinationSequence),
                         new BitString(hopCount),
-                        new BitString(originatorAdress));
+                        new BitString(originatorAddress));
 
-        if (destinationAdress.equals(ownAddr)) {
+        if (destinationAddress.equals(ownAddr)) {
             console.printMessage("ProtocolManager >>> RREP for own address received.\n");
-            routingTableManager.addRoutingEntry(originatorAdress, destinationSequence, addrFrom, hopCount, "EMPTY");
+            routingTableManager.addRoutingEntry(originatorAddress, destinationSequence, addrFrom, hopCount, "EMPTY");
         } else {
             console.printMessage("ProtocolManager >>> RREP for other address received. Forwarding...\n");
-            BitString bitString = new BitString(hopCount);
-            // parse to int
-            int type__ = Integer.parseInt(bitString.toString(), 2);
-            type__ = type__ + 1;
-            // Convert to binary
-            String binary = String.format("%6s", Integer.toBinaryString(type__)).replace(' ', '0');
-            bitString = new BitString(binary);
-            rrep.setHopCount(bitString);
+            // Increment HopCount
+            rrep.setHopCount(incrementFrame(hopCount, "%6s"));
         }
     }
 
@@ -283,7 +273,7 @@ public class ProtocolManager {
      */
 
     // Create RREQ Message with a specific destination address
-    public RREQ generateRREQ(String destAddr) {
+    public void generateRREQ(String destAddr) throws InterruptedException {
         // Increment Req ID and Seq Number
         localSeqNum = localSeqNum + 1;
         localReq = localReq + 1;
@@ -292,7 +282,7 @@ public class ProtocolManager {
         String localReqAsBinary = String.format("%6s", Integer.toBinaryString(localReq)).replace(' ', '0');
         String destAddrBinary = String.format("%16s", Integer.toBinaryString(Integer.parseInt(destAddr, 16))).replace(' ', '0');
         String ownAddrBinary = String.format("%16s", Integer.toBinaryString(Integer.parseInt(ownAddr, 16))).replace(' ', '0');
-        return new RREQ(
+        RREQ req = new RREQ(
                 // Flags
                 new BitString("000000"),
                 // Hop Count
@@ -308,6 +298,7 @@ public class ProtocolManager {
                 // Origin Seq
                 new BitString(localSeqAsBinary)
         );
+        sendRREQBroadcast(req);
     }
 
     private String encodeBase64(byte[] bytes) {
@@ -342,6 +333,13 @@ public class ProtocolManager {
                         routeReply.getSourceAddr()
 
         );
+    }
+
+    public BitString incrementFrame(String frame, String format) {
+        BitString frameBitString = new BitString(frame);
+        int frameCount = Integer.parseInt(frameBitString.toString(), 2);
+        frameCount++;
+        return new BitString(String.format(format, Integer.toBinaryString(frameCount)).replace(' ', '0'));
     }
 
     public RoutingTableManager getRoutingTableManager() {
