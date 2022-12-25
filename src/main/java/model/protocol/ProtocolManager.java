@@ -24,15 +24,17 @@ public class ProtocolManager {
     private String prevHop;
     // Network Parameters
     private int RREQRetries = 0;
-    private final int NET_DIAMETER = 0;
     private final int RREQ_RETRIES_MAX = 2;
+    private final int NET_DIAMETER = 35;
     private final int NODE_TRAVERSAL_TIME = 40;
     private final int NET_TRAVERSAL_TIME = 2 * NODE_TRAVERSAL_TIME * NET_DIAMETER;
     private final int PATH_DISCOVERY_TIME = 2 * NET_TRAVERSAL_TIME;
     private final int ACTIVE_ROUTE_TIMEOUT = 3000;
     private final int MY_ROUTE_TIMEOUT = 2 * ACTIVE_ROUTE_TIMEOUT;
     private boolean waitingForRREP = false;
+    private int currentWaitingTime = NET_TRAVERSAL_TIME;
     private long startTime;
+    // Buffered RREQ Packet for Retries
     private RREQ bufferedRREQ;
     // Config Stuff
     private final RoutingTableManager routingTableManager = new RoutingTableManager();
@@ -71,6 +73,7 @@ public class ProtocolManager {
         }
 
     }
+
     // Update Reverse Routing Table
     private void addReverseRoutingTable(String destAddr, String sourceAddr, String hopCount, String prevHop) {
         ReverseRoutingEntry entry = new ReverseRoutingEntry(destAddr, sourceAddr, hopCount, prevHop);
@@ -146,12 +149,14 @@ public class ProtocolManager {
 
 
     private void waitForReply() throws InterruptedException {
-        if(waitingForRREP && RREQRetries < RREQ_RETRIES_MAX && (System.currentTimeMillis() - startTime) < NET_TRAVERSAL_TIME) {
+        if (waitingForRREP && RREQRetries < RREQ_RETRIES_MAX && (System.currentTimeMillis() - startTime) < currentWaitingTime) {
             console.printMessage("ProtocolManager >>> Waiting for RREP...");
             waitForReply();
         } else if (RREQRetries < RREQ_RETRIES_MAX) {
             console.printMessage("ProtocolManager >>> RREP not received, retrying...");
-            // TODO back off timer
+            // back off timer for retries
+            currentWaitingTime = (int) Math.pow(2, RREQRetries) * NET_TRAVERSAL_TIME;
+            // restart timer and increase retries, reqID and buffer RREQ
             this.startTime = System.currentTimeMillis();
             RREQRetries++;
             this.localReq++;
@@ -159,11 +164,13 @@ public class ProtocolManager {
             sendRREQBroadcast(bufferedRREQ);
         } else {
             console.printMessage("ProtocolManager >>> RREP not received, giving up...");
+            // Reset all changed net parameters
+            currentWaitingTime = NET_TRAVERSAL_TIME;
             RREQRetries = 0;
             waitingForRREP = false;
             bufferedRREQ = null;
+            // TODO: Send Destination Unreachable Message
         }
-
     }
 
     /*
@@ -265,7 +272,7 @@ public class ProtocolManager {
             BitString destSeq = incrementFrame(destSeqNum, "%8s");
             String localSeqAsBinary = String.format("%8s", Integer.toBinaryString(localSeqNum)).replace(' ', '0');
             BitString localSeq = new BitString(localSeqAsBinary);
-            if(!destSeqNum.equals(localSeqAsBinary)) {
+            if (!destSeqNum.equals(localSeqAsBinary)) {
                 destSeq = localSeq;
             }
             // Generate new RREP
@@ -274,7 +281,8 @@ public class ProtocolManager {
             sendRREP(rrep);
 
         } else {
-            console.printMessage("ProtocolManager >>> RREQ for other address received. Forwarding...\n");;
+            console.printMessage("ProtocolManager >>> RREQ for other address received. Forwarding...\n");
+            ;
             // Increment HopCount
             BitString newHopCount = incrementFrame(hopCount, "%6s");
             // Broadcast updated RREQ
@@ -301,10 +309,10 @@ public class ProtocolManager {
         String hopCount = incomingMessage.substring(incomingMessage.length() - 8);
 
         RREP rrep = new RREP(new BitString(lifeTime),
-                        new BitString(destinationAddress),
-                        new BitString(destinationSequence),
-                        new BitString(hopCount),
-                        new BitString(originatorAddress));
+                new BitString(destinationAddress),
+                new BitString(destinationSequence),
+                new BitString(hopCount),
+                new BitString(originatorAddress));
 
         if (destinationAddress.equals(ownAddr)) {
             console.printMessage("ProtocolManager >>> RREP for own address received.\n");
@@ -316,9 +324,9 @@ public class ProtocolManager {
         }
     }
 
-   private void processDATA(String incomingMessage) {
-        console.printMessage("ProtocolManager >>> DATA received:" + incomingMessage +"\n");
-   }
+    private void processDATA(String incomingMessage) {
+        console.printMessage("ProtocolManager >>> DATA received:" + incomingMessage + "\n");
+    }
 
 
     /*
@@ -407,9 +415,11 @@ public class ProtocolManager {
     private String localReqAsBinary() {
         return String.format("%6s", Integer.toBinaryString(localReq)).replace(' ', '0');
     }
+
     private String localSeqAsBinary() {
         return String.format("%8s", Integer.toBinaryString(localSeqNum)).replace(' ', '0');
     }
+
     private String ownAddrAsBinary() {
         return String.format("%16s", Integer.toBinaryString(Integer.parseInt(ownAddr, 16))).replace(' ', '0');
     }
@@ -421,7 +431,6 @@ public class ProtocolManager {
         frameCount++;
         return new BitString(String.format(format, Integer.toBinaryString(frameCount)).replace(' ', '0'));
     }
-
 
 
     public RoutingTableManager getRoutingTableManager() {
