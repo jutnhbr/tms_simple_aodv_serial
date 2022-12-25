@@ -133,8 +133,17 @@ public class ProtocolManager {
         Thread.sleep(2000);
         serialManager.writeData(encodedRREP);
 
-
     }
+
+    public void sendDATA(DATA dataPacket) throws InterruptedException {
+        BitString data = DATAtoBitString(dataPacket);
+        console.printMessage("ProtocolManager >>> Sending DATA: " + data.toString() + " with length " + data.getLength() + "bits.\n");
+        String encodedDATA = encodeBase64(data.toNumber().toByteArray());
+        serialManager.writeData("AT+SEND=" + encodedDATA.length());
+        Thread.sleep(2000);
+        serialManager.writeData(encodedDATA);
+    }
+
 
     private void waitForReply() throws InterruptedException {
         if(waitingForRREP && RREQRetries < RREQ_RETRIES_MAX && (System.currentTimeMillis() - startTime) < NET_TRAVERSAL_TIME) {
@@ -206,9 +215,10 @@ public class ProtocolManager {
                 console.printMessage("ProtocolManager >>> Payload parsed as RREP.\n");
                 processRREP(incomingMessage, this.prevHop);
             }
-            case 3 -> console.printMessage("ProtocolManager >>> Payload parsed as ACK.\n");
-            case 4 -> console.printMessage("ProtocolManager >>> Payload parsed as RERR.\n");
-            case 5 -> console.printMessage("ProtocolManager >>> Payload parsed as DATA.\n");
+            case 0 -> {
+                console.printMessage("ProtocolManager >>> Payload parsed as DATA.\n");
+                processDATA(incomingMessage);
+            }
             default -> console.printErrMessage("ProtocolManager >>> Received unknown message type: " + msgType);
         }
     }
@@ -306,11 +316,9 @@ public class ProtocolManager {
         }
     }
 
-    public void processRERR(byte[] incomingMessageBytes) {
-    }
-
-    public void processACK(byte[] incomingMessageBytes) {
-    }
+   private void processDATA(String incomingMessage) {
+        console.printMessage("ProtocolManager >>> DATA received:" + incomingMessage +"\n");
+   }
 
 
     /*
@@ -390,6 +398,10 @@ public class ProtocolManager {
                         routeReply.getSourceAddr()
 
         );
+    }
+
+    private BitString DATAtoBitString(DATA dataPacket) {
+        return new BitString(dataPacket.getType().toString() + dataPacket.getMessage());
     }
 
     private String localReqAsBinary() {
