@@ -10,6 +10,8 @@ public class RoutingEntry {
     private String destAddr;
     private String destSeqNum;
     private boolean validDestSeqNum;
+
+    private boolean active;
     private String nextHop;
     private String hopCount;
     private String lifetime;
@@ -23,6 +25,7 @@ public class RoutingEntry {
         this.hopCount = hopCount;
         this.validDestSeqNum = validDestSeqNum;
         this.lifetime = lifetime;
+        this.active = false;
     }
 
     public String getDestAddr() {
@@ -94,5 +97,13 @@ public void addPrecursor(String name){
                 ", prev=" + precursors +
                 ", lifeTime=" + lifetime +
                 '}';
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
     }
 }
