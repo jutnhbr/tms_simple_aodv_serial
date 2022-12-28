@@ -429,7 +429,7 @@ public class ProtocolManager {
                 new BitString(hopCount),
                 new BitString(originatorAddress));
 
-        if (destinationAddress.equals(ownAddr)) {
+
             console.printMessage("ProtocolManager >>> RREP for own address received.\n");
 
             RoutingEntry entry = findRoutingEntry(originatorAddress);
@@ -448,12 +448,13 @@ public class ProtocolManager {
                 addRoutingTable(destinationAddress,destinationSequence,this.prevHop,hopCount,false, String.valueOf(ACTIVE_ROUTE_TIMEOUT),this.prevHop);
 
             }
-
-        } else {
+        if (!destinationAddress.equals(ownAddr)) {
             console.printMessage("ProtocolManager >>> RREP for other address received. Forwarding...\n");
             // Increment HopCount
             rrep.setHopCount(incrementFrame(hopCount, "%6s"));
         }
+
+
     }
 
 
