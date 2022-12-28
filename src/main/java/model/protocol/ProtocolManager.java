@@ -57,22 +57,19 @@ public class ProtocolManager {
 
     // Add own address / route to routing table
     private void addSelfToRoutingTable() {
-        routingTableManager.addRoutingEntry(ownAddr, new BitString("00000000").toString(), ownAddr, new BitString("000000").toString(), null);
+        RoutingEntry entry = new RoutingEntry(ownAddr,new BitString("00000000").toString(),ownAddr,new BitString("000000").toString(),true,String.valueOf(System.currentTimeMillis()+2*NET_TRAVERSAL_TIME-2*Integer.parseInt("0")*NET_TRAVERSAL_TIME))
+        routingTableManager.addRoutingEntry(entry);
     }
 
     // Update Normal Routing Table
     private void addRoutingTable(String destAddr, String destSeqNum, String nextHop, String hopCount, String prev) {
-        RoutingEntry entry = new RoutingEntry(destAddr, destSeqNum, nextHop, hopCount, prev);
-        // Re-Check if entry already exists
-        if (routingTableManager.getRoutingTable().contains(entry)) {
-            console.printMessage("ProtocolManager >>> Routing Table already contains entry: " + entry);
-        } else {
+        RoutingEntry entry = new RoutingEntry(destAddr, destSeqNum, nextHop, hopCount, true,String.valueOf(System.currentTimeMillis()+2*NET_TRAVERSAL_TIME-2*Integer.parseInt(hopCount)*NET_TRAVERSAL_TIME));
             // Add entry
-            console.printMessage("ProtocolManager >>> Adding entry to routing table: " + entry);
-            routingTableManager.addRoutingEntry(destAddr, destSeqNum, nextHop, hopCount, prev);
-        }
+        entry.addPrecursor(prev);
+        console.printMessage("ProtocolManager >>> Adding entry to routing table: " + entry);
+        routingTableManager.addRoutingEntry(entry);
 
-    }
+        }
 
     // Update Reverse Routing Table
     private void addReverseRoutingTable(String destAddr, String sourceAddr, String hopCount, String prevHop) {
@@ -230,6 +227,26 @@ public class ProtocolManager {
         }
     }
 
+
+    public void processRREQ2(String incomingMessage) throws InterruptedException {
+        String sourceAddr = incomingMessage.substring(incomingMessage.length() - 24, incomingMessage.length() - 8);
+        String sourceSeqNum = incomingMessage.substring(incomingMessage.length() - 8);
+        String destAddr = incomingMessage.substring(incomingMessage.length() - 48, incomingMessage.length() - 32);
+        String reqID = incomingMessage.substring(incomingMessage.length() - 54, incomingMessage.length() - 48);
+        String destSeqNum = incomingMessage.substring(incomingMessage.length() - 32, incomingMessage.length() - 24);
+        String hopCount = incomingMessage.substring(incomingMessage.length() - 60, incomingMessage.length() - 54);
+
+
+        if (findRoutingEntry(destAddr)!= null) {
+            console.printMessage("ProtocolManager >>> Route to " + destAddr + " already exists.\n");
+        } else {
+            //TODO
+            //Datentypen in ganzen Project müssen überabeitet und sinvoll angepasst werden
+            addRoutingTable(destAddr, String.valueOf(Math.max(Integer.parseInt(sourceSeqNum),Integer.parseInt(destSeqNum))), null, hopCount, this.prevHop);
+        }
+
+    }
+
     public void processRREQ(String incomingMessage) throws InterruptedException {
         // Parse relevant data
         String sourceAddr = incomingMessage.substring(incomingMessage.length() - 24, incomingMessage.length() - 8);
@@ -299,6 +316,23 @@ public class ProtocolManager {
         }
     }
 
+    public RREP generateRREP(String sourceAddr, String sourceSeqNum, String destAddr, String reqID, String destSeqNum,String hopCount) {
+        BitString lifeTime;
+
+        if (destAddr.equals(ownAddr)) {
+            hopCount = "0";
+            lifeTime = new BitString(MY_ROUTE_TIMEOUT);
+            if(localSeqNum+1 == Integer.parseInt(destSeqNum)){
+                localSeqNum = localSeqNum+1;
+            }
+            return new RREP(lifeTime,new BitString(sourceAddr),new BitString(localReq),new BitString(ownAddr),new BitString(hopCount));
+        }else {
+            if(findRoutingEntry(destAddr) != null ) {
+            }else {
+
+            }
+        }
+    }
 
     public void processRREP(String incomingMessage, String addrFrom) {
 

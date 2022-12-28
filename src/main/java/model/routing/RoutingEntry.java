@@ -1,23 +1,28 @@
 package model.routing;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 
 public class RoutingEntry {
 
     private String destAddr;
     private String destSeqNum;
+    private boolean validDestSeqNum;
     private String nextHop;
     private String hopCount;
-    private String prev;
+    private String lifetime;
+    private HashSet<String> precursors = new HashSet<>();
 
 
-    public RoutingEntry(String destAddr, String destSeqNum, String nextHop, String hopCount, String prev) {
+    public RoutingEntry(String destAddr, String destSeqNum, String nextHop, String hopCount, boolean validDestSeqNum, String lifetime) {
         this.destAddr = destAddr;
         this.destSeqNum = destSeqNum;
         this.nextHop = nextHop;
         this.hopCount = hopCount;
-        this.prev = prev;
+        this.validDestSeqNum = validDestSeqNum;
+        this.lifetime = lifetime;
     }
 
     public String getDestAddr() {
@@ -52,23 +57,42 @@ public class RoutingEntry {
         this.hopCount = hopCount;
     }
 
-    public String getPreList() {
-        return prev;
+    public boolean isValidDestSeqNum() {
+        return validDestSeqNum;
     }
 
-    public void setPreList(String prev) {
-        this.prev = prev;
+    public void setValidDestSeqNum(boolean validDestSeqNum) {
+        this.validDestSeqNum = validDestSeqNum;
     }
 
+    public String getLifetime() {
+        return lifetime;
+    }
+
+    public void setLifetime(String lifetime) {
+        this.lifetime = lifetime;
+    }
+public void addPrecursor(String name){
+        precursors.add(name);
+}
+    public HashSet<String> getPrecursors() {
+        return precursors;
+    }
+
+    public void setPrecursors(HashSet<String> precursors) {
+        this.precursors = precursors;
+    }
 
     @Override
     public String toString() {
         return "RoutingEntry{" +
                 "destAddr=" + destAddr +
                 ", destSeqNum=" + Integer.parseInt(destSeqNum,2) +
+                ", validDestSeqNum=" + validDestSeqNum +
                 ", nextHop=" + nextHop +
                 ", hopCount=" + Integer.parseInt(hopCount,2) +
-                ", prev=" + prev +
+                ", prev=" + precursors +
+                ", lifeTime=" + lifetime +
                 '}';
     }
 }
