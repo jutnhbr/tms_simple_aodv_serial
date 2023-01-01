@@ -15,8 +15,8 @@ public class RoutingTableManager {
     public void addRoutingEntry(RoutingEntry routingEntry){
         routingTable.add(routingEntry);
     }
-    public void addReverseRoutingEntry(String destAddr, String sourceAddr, String hopCount, String prev) {
-        reverseRoutingTable.add(new ReverseRoutingEntry(destAddr, sourceAddr, hopCount, prev));
+    public void addReverseRoutingEntry(String destAddr, String destSeqNum, String nextHop, String hopCount, boolean validDestSeqNum, String lifetime) {
+        reverseRoutingTable.add(new ReverseRoutingEntry(destAddr, destSeqNum,nextHop,hopCount,validDestSeqNum,lifetime));
     }
 
     public List<RoutingEntry> getRoutingTable() {

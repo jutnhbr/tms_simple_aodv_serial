@@ -57,7 +57,7 @@ public class LoraCLI {
                     break;
                 case 4:
                     String destAddr = console.readStringFromInput("Enter Destination Address (e.g. AAAA): ");
-                    protocolManager.generateRREQ(destAddr);
+                    protocolManager.generateRREQ2(destAddr);
                     break;
                 case 5:
                     console.printMessage(
