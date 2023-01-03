@@ -1,13 +1,12 @@
+/**
+ * Class to try things out
+ */
+
 import control.LoraCLI;
-import control.TestEnvironment;
-import model.SerialManager;
-import model.messageTypes.RREQ;
 import model.protocol.ProtocolManager;
 import org.uncommons.maths.binary.BitString;
 
-
 import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -15,8 +14,8 @@ public class TestingClass {
 
     public static void main(String[] args) throws InterruptedException {
 
-        LoraCLI loraCLI = new LoraCLI();
-        loraCLI.start();
+       LoraCLI loraCLI = new LoraCLI();
+       loraCLI.start();
 
         BitString bitString = new BitString("000001");
         // parse to int
@@ -115,6 +114,19 @@ public class TestingClass {
         ProtocolManager protocolManager = new ProtocolManager(null, null);
         // protocolManager.parseMessageType(test);
         // protocolManager.receiveIncomingPayload(pl.getBytes());
+
+
+        long time = 6000;
+        String timeBinary = String.format("%18s", Integer.toBinaryString((int) time)).replace(' ', '0');
+        System.out.println("Time Binary: " + timeBinary);
+        // convert to long
+        long time_ = Long.parseLong(timeBinary, 2);
+        System.out.println("Time: " + time_);
+
+
+
+
+
 
 
     }

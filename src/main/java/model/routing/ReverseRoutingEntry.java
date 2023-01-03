@@ -1,18 +1,27 @@
 package model.routing;
 
+import java.util.HashSet;
+
 public class ReverseRoutingEntry {
 
     private String destAddr;
-    private String sourceAddr;
+    private String destSeqNum;
+    private String nextHop;
     private String hopCount;
-    private String prev;
+    private String lifetime;
+    private boolean validDestSeqNum;
+    private boolean active;
+    private HashSet<String> precursors = new HashSet<>();
 
 
-    public ReverseRoutingEntry(String destAddr, String sourceAddr, String hopCount, String prev) {
+    public ReverseRoutingEntry(String destAddr, String destSeqNum, String nextHop, String hopCount, boolean validDestSeqNum, String lifetime) {
         this.destAddr = destAddr;
-        this.sourceAddr = sourceAddr;
+        this.destSeqNum = destSeqNum;
+        this.nextHop = nextHop;
         this.hopCount = hopCount;
-        this.prev = prev;
+        this.validDestSeqNum = validDestSeqNum;
+        this.lifetime = lifetime;
+        this.active = false;
     }
 
 
@@ -24,12 +33,36 @@ public class ReverseRoutingEntry {
         this.destAddr = destAddr;
     }
 
-    public String getSourceAddr() {
-        return sourceAddr;
+    public String getDestSeqNum() {
+        return destSeqNum;
     }
 
-    public void setSourceAddr(String sourceAddr) {
-        this.sourceAddr = sourceAddr;
+    public void setDestSeqNum(String destSeqNum) {
+        this.destSeqNum = destSeqNum;
+    }
+
+    public boolean isValidDestSeqNum() {
+        return validDestSeqNum;
+    }
+
+    public void setValidDestSeqNum(boolean validDestSeqNum) {
+        this.validDestSeqNum = validDestSeqNum;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+
+    public String getNextHop() {
+        return nextHop;
+    }
+
+    public void setNextHop(String nextHop) {
+        this.nextHop = nextHop;
     }
 
     public String getHopCount() {
@@ -40,22 +73,33 @@ public class ReverseRoutingEntry {
         this.hopCount = hopCount;
     }
 
-    public String getPrev() {
-        return prev;
+    public String getLifetime() {
+        return lifetime;
     }
 
-    public void setPrev(String prev) {
-        this.prev = prev;
+    public void setLifetime(String lifetime) {
+        this.lifetime = lifetime;
     }
 
+    public HashSet<String> getPrecursors() {
+        return precursors;
+    }
+
+    public void addPrecursor(String name) {
+        precursors.add(name);
+    }
 
     @Override
     public String toString() {
         return "ReverseRoutingEntry{" +
-                "destAddr=" + destAddr +
-                ", sourceAddr=" + sourceAddr +
-                ", hopCount=" + hopCount +
-                ", prev=" + prev +
+                "destAddr='" + destAddr + '\'' +
+                ", destSeqNum='" + destSeqNum + '\'' +
+                ", validDestSeqNum=" + validDestSeqNum +
+                ", active=" + active +
+                ", nextHop='" + nextHop + '\'' +
+                ", hopCount='" + hopCount + '\'' +
+                ", lifetime='" + lifetime + '\'' +
+                ", precursors=" + precursors +
                 '}';
     }
 }

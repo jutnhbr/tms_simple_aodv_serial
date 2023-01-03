@@ -1,8 +1,13 @@
+/**
+ * To test the ProtocolManager start the ApplicationTester.java class. This will start the TestEnvironment.java class.
+ * Underneath you can configure test messages that will be sent to the ProtocolManager. Stick to a total length of
+ * 72 bits per data packet. The first 6 bits are reserved for the type of message.
+ */
+
 package control;
 
 import model.SerialManager;
 import org.uncommons.maths.binary.BitString;
-import threads.ParseTesterThread;
 import view.Console;
 
 import java.util.Base64;
@@ -18,7 +23,7 @@ public class TestEnvironment {
         // ParseTesterThread test = new ParseTesterThread(serialTester);
         // test.start();
         // console.printMessage("Tester is running ...\n");
-        BitString payloadRREQ = new BitString("000001000000000001000000111111111111111100000001101011011101110100011001");
+        BitString payloadRREQ = new BitString("0000010000000000010000001111111111111111 00000001 1010110111011101 00011001");
         BitString payloadRREP = new BitString("000010000000000001000000111111111111111100000001101011011101110100011001");
         String encodedPayload = Base64.getEncoder().encodeToString(payloadRREQ.toNumber().toByteArray());
         String encodedPayload2 = Base64.getEncoder().encodeToString(payloadRREP.toNumber().toByteArray());
@@ -29,10 +34,10 @@ public class TestEnvironment {
         System.out.println("Payload for RREP -->" + message2);
         Thread.sleep(4000);
         serialTester.writeData(message1);
-        Thread.sleep(4000);
-        serialTester.writeData(message1);
-        Thread.sleep(4000);
-        serialTester.writeData(message2);
+        // Thread.sleep(4000);
+        //serialTester.writeData(message1);
+        //Thread.sleep(4000);
+        //serialTester.writeData(message2);
 
 
     }

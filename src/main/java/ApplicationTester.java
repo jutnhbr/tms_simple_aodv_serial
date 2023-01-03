@@ -1,3 +1,7 @@
+/**
+ * Start to run the TestEnvironment
+ */
+
 import control.TestEnvironment;
 import model.SerialManager;
 
