@@ -6,12 +6,11 @@ public class ReverseRoutingEntry {
 
     private String destAddr;
     private String destSeqNum;
-    private boolean validDestSeqNum;
-
-    private boolean active;
     private String nextHop;
     private String hopCount;
     private String lifetime;
+    private boolean validDestSeqNum;
+    private boolean active;
     private HashSet<String> precursors = new HashSet<>();
 
 
@@ -86,11 +85,7 @@ public class ReverseRoutingEntry {
         return precursors;
     }
 
-    public void setPrecursors(HashSet<String> precursors) {
-        this.precursors = precursors;
-    }
-
-    public void addPrecursor(String name){
+    public void addPrecursor(String name) {
         precursors.add(name);
     }
 
