@@ -15,10 +15,10 @@ public class SerialManager {
     private int parity = 0;
     private final int[] standardPortConfig = {115200, 8, 1, 0};
     // AT COMMAND CONFIG
-
     private final String ATConfigString = AT.AT_CFG.getCommand() + "433920000,5,6,10,4,1,0,0,0,0,3000,8,4";
-
+    // Port
     private SerialPort activePort;
+    // Util
     private final MessageUtil messageUtil = new MessageUtil();
 
 
@@ -32,7 +32,7 @@ public class SerialManager {
 
     public SerialPort getPortByName(String portName) {
         return SerialPort.getCommPort(portName);
-        }
+    }
 
     public void updateConfig(int baudRate, int dataBits, int stopBits, int parity) {
         this.baudRate = baudRate;
@@ -40,6 +40,7 @@ public class SerialManager {
         this.stopBits = stopBits;
         this.parity = parity;
     }
+
     public String getConfig() {
         return "SerialManager >>> " +
                 "\nBaud Rate: " + baudRate +
@@ -58,7 +59,7 @@ public class SerialManager {
 
 
     public String connect(SerialPort port) {
-        if(port.isOpen()) {
+        if (port.isOpen()) {
             return "SerialManager >>> Port is already open.";
         }
         port.setBaudRate(baudRate);
@@ -69,8 +70,7 @@ public class SerialManager {
         boolean check = activePort.openPort();
         if (check) {
             return "\nSerialManager >>> Connected to: " + activePort.getSystemPortName().toUpperCase() + " | " + activePort.getDescriptivePortName() + "\n";
-        }
-        else {
+        } else {
             return "\nSerialManager >>> ERROR: Could not connect to " + activePort.getSystemPortName().toUpperCase() + "\n";
         }
     }
@@ -80,29 +80,24 @@ public class SerialManager {
     }
 
     public void writeData(String data) throws NullPointerException {
-        if(activePort == null) throw new NullPointerException("SerialManager >>> ERROR: No active port!");
+        if (activePort == null) throw new NullPointerException("SerialManager >>> ERROR: No active port!");
         data = messageUtil.parseMessage(data);
         System.out.println("SerialManager >>> Writing Data to Port:" + data);
         activePort.writeBytes(data.getBytes(), data.length());
     }
-    public void writeDataAsBytes(byte[] data) throws NullPointerException {
-        if(activePort == null) throw new NullPointerException("SerialManager >>> ERROR: No active port!");
-        System.out.println("Writing Data:" + Arrays.toString(data));
-        activePort.writeBytes(data, data.length);
-    }
 
     public String checkConnection() throws NullPointerException {
-        if(activePort == null) throw new NullPointerException("\nSerialManager >>> No active Port! You need to connect to a port first.\n");
+        if (activePort == null)
+            throw new NullPointerException("\nSerialManager >>> No active Port! You need to connect to a port first.\n");
         if (activePort.isOpen()) {
-            return  "\nSerialManager >>> Connected to " + activePort.getDescriptivePortName() + " | " + activePort.getSystemPortName().toUpperCase() + "\n";
-        }
-        else {
-            return  "\nSerialManager >>> Not Connected\n";
+            return "\nSerialManager >>> Connected to " + activePort.getDescriptivePortName() + " | " + activePort.getSystemPortName().toUpperCase() + "\n";
+        } else {
+            return "\nSerialManager >>> Not Connected\n";
         }
     }
 
     public String getCurrentMessageMode(String identifier) {
-    	return identifier.equalsIgnoreCase("short") ? messageUtil.getCurrentMode().getModeSymbolAsString() : messageUtil.getCurrentMode().getModeName();
+        return identifier.equalsIgnoreCase("short") ? messageUtil.getCurrentMode().getModeSymbolAsString() : messageUtil.getCurrentMode().getModeName();
     }
 
     public String getATConfigString() {
