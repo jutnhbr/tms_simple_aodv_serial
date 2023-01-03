@@ -1,9 +1,12 @@
+/**
+ * LoraCLI is a command line interface for the LoraWAN protocol. The Protocol logic starts here.
+ *
+ */
 package control;
 
 import com.fazecast.jSerialComm.SerialPort;
 import data.AT;
 import model.SerialManager;
-import model.messageTypes.RREQ;
 import model.protocol.ProtocolManager;
 import threads.ProtocolThread;
 import threads.ReadingThread;
@@ -36,14 +39,14 @@ public class LoraCLI {
                 case 2:
                     if (serialManager.getActivePort() != null && serialManager.getActivePort().isOpen()) {
                         console.printErrMessage("Port is already open!\n");
-                        break;
                     } else {
                         serialManager.connect(serialManager.getPortByName(console.readStringFromInput("Enter Port Name: ")));
-                        console.printMessage(serialManager.getActivePort().getSystemPortName().toUpperCase() + " | " + serialManager.getActivePort().getDescriptivePortName() + " is now open.\n");
+                        console.printMessage(serialManager.getActivePort().getSystemPortName().toUpperCase()
+                                + " | " + serialManager.getActivePort().getDescriptivePortName() + " is now open.\n");
                         readingThread.start();
                         protocolThread.start();
-                        break;
                     }
+                    break;
                 case 3:
                     console.printMessage("Configuring RX Mode ... \n");
                     serialManager.writeData(AT.AT_RX.getCommand());
@@ -57,7 +60,7 @@ public class LoraCLI {
                     break;
                 case 4:
                     String destAddr = console.readStringFromInput("Enter Destination Address (e.g. AAAA): ");
-                    protocolManager.generateRREQ2(destAddr);
+                    protocolManager.generateRREQ(destAddr);
                     break;
                 case 5:
                     console.printMessage(
@@ -67,6 +70,8 @@ public class LoraCLI {
                             + protocolManager.getRoutingTableManager().getReverseRoutingTable().toString()
                             + "\n*********************************************************************\n");
                     break;
+                case 6:
+                    // String data = console.readStringFromInput("Enter Data: ");
                 case 0:
                     console.printErrMessage("Exiting...");
                     System.exit(0);

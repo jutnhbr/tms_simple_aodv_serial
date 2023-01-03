@@ -31,14 +31,14 @@ public class ReadingThread extends Thread {
                     while (serialManager.getActivePort().bytesAvailable() == 0)
                         Thread.sleep(20);
 
+                    // Read data from serial port
                     readBuffer = new byte[serialManager.getActivePort().bytesAvailable()];
                     int numRead = serialManager.getActivePort().readBytes(readBuffer, readBuffer.length);
-                    // System.out.println("Read " + numRead + " bytes.");
-                    // write into a queue
-                    if(AODV) {
+
+                    // Write data to queue if AODV is enabled
+                    if (AODV) {
                         commandQueue.add(new String(readBuffer, StandardCharsets.UTF_8));
-                    }
-                    else {
+                    } else {
                         console.printMessage(new String(readBuffer, StandardCharsets.UTF_8));
                     }
                 }
@@ -50,6 +50,7 @@ public class ReadingThread extends Thread {
         }
 
     }
+
     public void stopThread() {
         isRunning.set(false);
     }
