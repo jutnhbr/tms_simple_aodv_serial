@@ -1,20 +1,16 @@
 package model.routing;
 
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
 
 public class RoutingEntry {
 
     private String destAddr;
     private String destSeqNum;
-    private boolean validDestSeqNum;
-
-    private boolean active;
     private String nextHop;
     private String hopCount;
     private String lifetime;
+    private boolean validDestSeqNum;
+    private boolean active;
     private HashSet<String> precursors = new HashSet<>();
 
 
@@ -30,10 +26,6 @@ public class RoutingEntry {
 
     public String getDestAddr() {
         return destAddr;
-    }
-
-    public void setDestAddr(String destAddr) {
-        this.destAddr = destAddr;
     }
 
     public String getDestSeqNum() {
@@ -75,15 +67,13 @@ public class RoutingEntry {
     public void setLifetime(String lifetime) {
         this.lifetime = lifetime;
     }
+
     public void addPrecursor(String name){
         precursors.add(name);
 }
+
     public HashSet<String> getPrecursors() {
         return precursors;
-    }
-
-    public void setPrecursors(HashSet<String> precursors) {
-        this.precursors = precursors;
     }
 
     @Override
