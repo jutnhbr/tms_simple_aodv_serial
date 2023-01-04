@@ -167,7 +167,7 @@ public class ProtocolManager {
     private void waitForReply() throws InterruptedException {
         while (waitingForRREP) {
             if ((System.currentTimeMillis() - startTime) < currentWaitingTime) {
-                Thread.sleep(20);
+                Thread.sleep(50);
             } else {
                 RREQRetries++;
                 this.localReq++;
@@ -178,12 +178,20 @@ public class ProtocolManager {
 
                 if (RREQRetries >= RREQ_RETRIES_MAX) {
                     waitingForRREP = false;
+                    resetWaitingForRREP();
                     // TODO: Send Destination unreachable Message
                 }
             }
         }
+        resetWaitingForRREP();
     }
 
+    // Reset all relevant network parameters
+    private void resetWaitingForRREP() {
+        this.RREQRetries = 0;
+        this.currentWaitingTime = NET_TRAVERSAL_TIME;
+        this.startTime = 0;
+    }
 
 
     /*
