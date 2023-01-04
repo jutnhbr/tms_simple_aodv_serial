@@ -15,7 +15,7 @@ public class TestingClass {
     public static void main(String[] args) throws InterruptedException {
 
         LoraCLI loraCLI = new LoraCLI();
-        loraCLI.start();
+       // loraCLI.start();
 
         BitString bitString = new BitString("000001");
         // parse to int
@@ -28,8 +28,9 @@ public class TestingClass {
         System.out.println(bitString.toString());
 
 
-        String destAddr = "FFFF";
-        String sourceAddr = "ADDD";
+        String destAddr = "0007";
+        String sourceAddr = "0008";
+
         int destSeq_ = 1;
         int sourceSeq_ = 25;
         // Convert destAddr to binary string

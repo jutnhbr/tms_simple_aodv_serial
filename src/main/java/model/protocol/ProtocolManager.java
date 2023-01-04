@@ -13,11 +13,12 @@ import view.Console;
 import java.math.BigInteger;
 import java.util.Base64;
 import java.util.Objects;
+
 // 0007 MobaNet12
 public class ProtocolManager {
 
     // Node Information
-    private final String ownAddr = "ADDF";
+    private final String ownAddr = "0007";
     // Local Network Data
     private int localSeqNum = 0;
     private int localReq = 0;
@@ -165,8 +166,8 @@ public class ProtocolManager {
     // wait for reply in a loop
     private void waitForReply() throws InterruptedException {
         while (waitingForRREP) {
-            if((System.currentTimeMillis() - startTime) < currentWaitingTime) {
-              Thread.sleep(20);
+            if ((System.currentTimeMillis() - startTime) < currentWaitingTime) {
+                Thread.sleep(20);
             } else {
                 RREQRetries++;
                 this.localReq++;
@@ -175,7 +176,7 @@ public class ProtocolManager {
                 console.printMessage("ProtocolManager >>> RREQ Timeout. Retrying RREQ " + RREQRetries + " of " + RREQ_RETRIES_MAX + " times.");
                 sendRREQBroadcast(bufferedRREQ);
 
-                if(RREQRetries >= RREQ_RETRIES_MAX) {
+                if (RREQRetries >= RREQ_RETRIES_MAX) {
                     waitingForRREP = false;
                     // TODO: Send Destination unreachable Message
                 }
