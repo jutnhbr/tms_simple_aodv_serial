@@ -13,7 +13,7 @@ import view.Console;
 import java.math.BigInteger;
 import java.util.Base64;
 import java.util.Objects;
-
+// 0007 MobaNet12
 public class ProtocolManager {
 
     // Node Information
@@ -73,7 +73,7 @@ public class ProtocolManager {
         if (prev != null) {
             entry.addPrecursor(prev);
         }
-        console.printMessage("ProtocolManager >>> Adding entry to routing table: " + entry);
+        console.printMessage("ProtocolManager >>> Adding entry to routing table: " + entry + "\n");
         routingTableManager.addRoutingEntry(entry);
 
     }
@@ -87,10 +87,10 @@ public class ProtocolManager {
             entry.addPrecursor(prev);
         }
         if (routingTableManager.getReverseRoutingTable().contains(entry)) {
-            console.printMessage("ProtocolManager >>> Reverse Routing Table already contains entry: " + entry);
+            console.printMessage("ProtocolManager >>> Reverse Routing Table already contains entry: " + entry + "\n");
         } else {
             // Add entry
-            console.printMessage("ProtocolManager >>> Adding entry to reverse routing table: " + entry);
+            console.printMessage("ProtocolManager >>> Adding entry to reverse routing table: " + entry + "\n");
             routingTableManager.addReverseRoutingEntry(destAddr, destSeqNum, nextHop, hopCount, validDestSeqNum, lifetime);
         }
     }
@@ -147,39 +147,43 @@ public class ProtocolManager {
     }
 
     public void sendDATA(DATA dataPacket) throws InterruptedException {
-        BitString data = DATAtoBitString(dataPacket);
-        console.printMessage("ProtocolManager >>> Sending DATA: " + data + " with length " + data.getLength() + "bits.\n");
-        String encodedDATA = encodeBase64(data.toNumber().toByteArray());
-        serialManager.writeData("AT+SEND=" + encodedDATA.length());
-        Thread.sleep(2000);
-        serialManager.writeData(encodedDATA);
-    }
-
-
-    private void waitForReply() throws InterruptedException {
-        if (waitingForRREP && RREQRetries < RREQ_RETRIES_MAX && (System.currentTimeMillis() - startTime) < currentWaitingTime) {
-            console.printMessage("ProtocolManager >>> Waiting for RREP...");
-            waitForReply();
-        } else if (RREQRetries < RREQ_RETRIES_MAX) {
-            console.printMessage("ProtocolManager >>> RREP not received, retrying...");
-            // Back off timer for retries
-            currentWaitingTime = (int) Math.pow(2, RREQRetries) * NET_TRAVERSAL_TIME;
-            // Restart timer and increase retries, reqID and buffer RREQ
-            this.startTime = System.currentTimeMillis();
-            RREQRetries++;
-            this.localReq++;
-            this.bufferedRREQ.setReq(new BitString(String.format("%6s", Integer.toBinaryString(localReq)).replace(' ', '0')));
-            sendRREQBroadcast(bufferedRREQ);
+        // Check if route to destination exists
+        RoutingEntry route = findRoutingEntry(String.valueOf(dataPacket.getDestAddr()));
+        if (route != null) {
+            BitString data = DATAtoBitString(dataPacket);
+            console.printMessage("ProtocolManager >>> Sending DATA: " + data + " with length " + data.getLength() + "bits.\n");
+            String encodedDATA = encodeBase64(data.toNumber().toByteArray());
+            serialManager.writeData("AT+SEND=6");
+            Thread.sleep(2000);
+            serialManager.writeData(encodedDATA);
         } else {
-            console.printMessage("ProtocolManager >>> RREP not received, giving up...");
-            // Reset all changed net parameters
-            currentWaitingTime = NET_TRAVERSAL_TIME;
-            RREQRetries = 0;
-            waitingForRREP = false;
-            bufferedRREQ = null;
-            // TODO: Send Destination Unreachable Message
+            generateRREQ(String.valueOf(dataPacket.getDestAddr()));
         }
     }
+
+
+    // wait for reply in a loop
+    private void waitForReply() throws InterruptedException {
+        while (waitingForRREP) {
+            if((System.currentTimeMillis() - startTime) < currentWaitingTime) {
+              Thread.sleep(20);
+            } else {
+                RREQRetries++;
+                this.localReq++;
+                this.startTime = System.currentTimeMillis();
+                currentWaitingTime = (int) Math.pow(2, RREQRetries) * NET_TRAVERSAL_TIME;
+                console.printMessage("ProtocolManager >>> RREQ Timeout. Retrying RREQ " + RREQRetries + " of " + RREQ_RETRIES_MAX + " times.");
+                sendRREQBroadcast(bufferedRREQ);
+
+                if(RREQRetries >= RREQ_RETRIES_MAX) {
+                    waitingForRREP = false;
+                    // TODO: Send Destination unreachable Message
+                }
+            }
+        }
+    }
+
+
 
     /*
      *
@@ -227,6 +231,7 @@ public class ProtocolManager {
             }
             case 2 -> {
                 console.printMessage("ProtocolManager >>> Payload parsed as RREP.\n");
+                waitingForRREP = false;
                 processRREP(incomingMessage);
             }
             case 0 -> {
@@ -451,12 +456,14 @@ public class ProtocolManager {
 
 
     private void processDATA(String incomingMessage) {
-        console.printMessage("ProtocolManager >>> DATA received:" + incomingMessage + "\n");
+        String data = incomingMessage.length() > 48 ? incomingMessage.substring(22, 48) : incomingMessage.substring(22);
+
+        console.printMessage("ProtocolManager >>> DATA received:" + data + "\n");
     }
 
     // Create RREQ Message with a specific destination address
     public void generateRREQ(String destAddr) throws InterruptedException {
-        BitString destSeqNum = new BitString("-1");
+        BitString destSeqNum = new BitString("0");
         BitString flag = new BitString("000000");
         // Check if Route already exists
         RoutingEntry routingEntry = findRoutingEntry(destAddr);
@@ -464,7 +471,7 @@ public class ProtocolManager {
             console.printMessage("ProtocolManager >>> Route to " + destAddr + " already exists.\n");
             return;
         } else if (routingEntry == null) {
-            destSeqNum = new BitString("000000");
+            destSeqNum = new BitString("00000000");
             flag = new BitString("100000");
 
         } else if (!routingEntry.isValidDestSeqNum()) {
@@ -496,6 +503,18 @@ public class ProtocolManager {
                 new BitString(localSeqAsBinary)
         );
         sendRREQBroadcast(req);
+    }
+
+    public void generateDATA(String message, String destAddr) {
+        DATA data = new DATA(
+                new BitString(destAddr),
+                new BitString(message)
+        );
+        try {
+            sendDATA(data);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -724,5 +743,34 @@ public class ProtocolManager {
             sendRREQBroadcast(newRREQ);
         }
     }*/
+
+    /*
+     private void waitForReply2() throws InterruptedException {
+        if (waitingForRREP && RREQRetries < RREQ_RETRIES_MAX) {
+
+            while ((System.currentTimeMillis() - startTime) < currentWaitingTime) {
+                console.printMessage("ProtocolManager >>> Waiting for RREP...");
+            }
+                console.printMessage("ProtocolManager >>> RREP not received, retrying...");
+                // Back off timer for retries
+                currentWaitingTime = (int) Math.pow(2, RREQRetries) * NET_TRAVERSAL_TIME;
+                // Restart timer and increase retries, reqID and buffer RREQ
+                this.startTime = System.currentTimeMillis();
+                RREQRetries++;
+                this.localReq++;
+                this.bufferedRREQ.setReq(new BitString(String.format("%6s", Integer.toBinaryString(localReq)).replace(' ', '0')));
+                sendRREQBroadcast(bufferedRREQ);
+                waitForReply();
+
+        } else {
+            console.printMessage("ProtocolManager >>> RREP not received, giving up...");
+            // Reset all changed net parameters
+            currentWaitingTime = NET_TRAVERSAL_TIME;
+            RREQRetries = 0;
+            waitingForRREP = false;
+            bufferedRREQ = null;
+        }
+    }
+     */
 
 }
