@@ -37,7 +37,9 @@ public class ReadingThread extends Thread {
 
                     // Write data to queue if AODV is enabled
                     if (AODV) {
-                        commandQueue.add(new String(readBuffer, StandardCharsets.UTF_8));
+                        String payload = new String(readBuffer, StandardCharsets.UTF_8);
+                        console.printMessage("ReadingThread >>> Adding payload to queue: " + payload + "\n");
+                        commandQueue.add(payload);
                     } else {
                         console.printMessage(new String(readBuffer, StandardCharsets.UTF_8));
                     }
