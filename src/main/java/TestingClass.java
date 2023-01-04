@@ -14,8 +14,8 @@ public class TestingClass {
 
     public static void main(String[] args) throws InterruptedException {
 
-       LoraCLI loraCLI = new LoraCLI();
-       loraCLI.start();
+        LoraCLI loraCLI = new LoraCLI();
+        loraCLI.start();
 
         BitString bitString = new BitString("000001");
         // parse to int
@@ -124,9 +124,19 @@ public class TestingClass {
         System.out.println("Time: " + time_);
 
 
-
-
-
+        BitString data = new BitString("000000100101011010101100000101010010101010101010101010101001010101010110100");
+        String typesss = data.toString().substring(0, 6);
+        System.out.println("Type: " + typesss);
+        String destAddrss = data.toString().substring(6, 22);
+        System.out.println("Dest Addr: " + destAddrss);
+        String data_;
+        if(data.getLength() > 48) {
+            data_ = data.toString().substring(22, 48);
+        } else {
+            data_ = data.toString().substring(22, data.getLength());
+        }
+        System.out.println(data_);
+        System.out.println(data_.length());
 
 
     }

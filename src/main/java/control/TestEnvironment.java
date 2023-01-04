@@ -23,7 +23,7 @@ public class TestEnvironment {
         // ParseTesterThread test = new ParseTesterThread(serialTester);
         // test.start();
         // console.printMessage("Tester is running ...\n");
-        BitString payloadRREQ = new BitString("0000010000000000010000001111111111111111 00000001 1010110111011101 00011001");
+        BitString payloadRREQ = new BitString("000001000000000001000000111111111111111100000001101011011101110100011001");
         BitString payloadRREP = new BitString("000010000000000001000000111111111111111100000001101011011101110100011001");
         String encodedPayload = Base64.getEncoder().encodeToString(payloadRREQ.toNumber().toByteArray());
         String encodedPayload2 = Base64.getEncoder().encodeToString(payloadRREP.toNumber().toByteArray());
