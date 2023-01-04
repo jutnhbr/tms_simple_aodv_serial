@@ -71,7 +71,12 @@ public class LoraCLI {
                             + "\n*********************************************************************\n");
                     break;
                 case 6:
-                    // String data = console.readStringFromInput("Enter Data: ");
+                    String data = console.readStringFromInput("Enter Data: ");
+                    String dest = console.readStringFromInput("Enter Destination Address (e.g. AAAA): ");
+                    protocolManager.generateDATA(data, dest);
+                    break;
+                case 7:
+                    serialManager.writeData(AT.AT.getCommand());
                 case 0:
                     console.printErrMessage("Exiting...");
                     System.exit(0);
