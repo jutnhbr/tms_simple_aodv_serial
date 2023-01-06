@@ -1,6 +1,8 @@
 package model;
 
 import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortDataListener;
+import com.fazecast.jSerialComm.SerialPortEvent;
 import data.AT;
 import util.MessageUtil;
 
@@ -58,6 +60,21 @@ public class SerialManager {
     }
 
 
+    private class  Listener implements SerialPortDataListener {
+
+        @Override
+        public int getListeningEvents() {
+            return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
+        }
+
+        @Override
+        public void serialEvent(SerialPortEvent serialPortEvent) {
+            byte[] buffer = new byte[serialPortEvent.getSerialPort().bytesAvailable()];
+            serialPortEvent.getSerialPort().readBytes(buffer,buffer.length);
+            System.out.println(new String(buffer));
+        }
+    }
+
     public String connect(SerialPort port) {
         if (port.isOpen()) {
             return "SerialManager >>> Port is already open.";
@@ -69,6 +86,7 @@ public class SerialManager {
         activePort = port;
         boolean check = activePort.openPort();
         if (check) {
+            activePort.addDataListener(new Listener());
             return "\nSerialManager >>> Connected to: " + activePort.getSystemPortName().toUpperCase() + " | " + activePort.getDescriptivePortName() + "\n";
         } else {
             return "\nSerialManager >>> ERROR: Could not connect to " + activePort.getSystemPortName().toUpperCase() + "\n";

@@ -77,6 +77,7 @@ public class LoraCLI {
                     break;
                 case 7:
                     serialManager.writeData(AT.AT.getCommand());
+                    break;
                 case 0:
                     console.printErrMessage("Exiting...");
                     System.exit(0);

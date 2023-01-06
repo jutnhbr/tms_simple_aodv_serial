@@ -1,6 +1,9 @@
 // AT+SEND=128 = 128byte | Receive = bytes hexadecimal 80 -> not 80 bytes
 package model.protocol;
 
+import com.fazecast.jSerialComm.SerialPort;
+import com.fazecast.jSerialComm.SerialPortDataListener;
+import com.fazecast.jSerialComm.SerialPortEvent;
 import model.SerialManager;
 import model.messageTypes.*;
 import model.routing.ReverseRoutingEntry;
@@ -18,7 +21,7 @@ import java.util.Objects;
 public class ProtocolManager {
 
     // Node Information
-    private final String ownAddr = "0007";
+    private final String ownAddr = "0002";
     // Local Network Data
     private int localSeqNum = 0;
     private int localReq = 0;
@@ -127,7 +130,7 @@ public class ProtocolManager {
         // Encode RREQ
         String encodedRREQ = encodeBase64(rreq.toNumber().toByteArray());
 
-        serialManager.writeData("AT+SEND=9");
+        serialManager.writeData("AT+SEND=12");
         Thread.sleep(2000);
         serialManager.writeData(encodedRREQ);
 
@@ -164,6 +167,9 @@ public class ProtocolManager {
 
 
     // wait for reply in a loop
+
+
+
     private void waitForReply() throws InterruptedException {
         while (waitingForRREP) {
             if ((System.currentTimeMillis() - startTime) < currentWaitingTime) {
