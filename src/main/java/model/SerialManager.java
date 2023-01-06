@@ -4,6 +4,7 @@ import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortDataListener;
 import com.fazecast.jSerialComm.SerialPortEvent;
 import data.AT;
+import threads.Listener;
 import util.MessageUtil;
 
 import java.util.Arrays;
@@ -60,20 +61,6 @@ public class SerialManager {
     }
 
 
-    private class  Listener implements SerialPortDataListener {
-
-        @Override
-        public int getListeningEvents() {
-            return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
-        }
-
-        @Override
-        public void serialEvent(SerialPortEvent serialPortEvent) {
-            byte[] buffer = new byte[serialPortEvent.getSerialPort().bytesAvailable()];
-            serialPortEvent.getSerialPort().readBytes(buffer,buffer.length);
-            System.out.println(new String(buffer));
-        }
-    }
 
     public String connect(SerialPort port) {
         if (port.isOpen()) {

@@ -24,7 +24,7 @@ public class ReadingThread extends Thread {
 
     public synchronized void run() {
         isRunning.set(true);
-        try {
+      /*  try {
             byte[] readBuffer;
             try {
                 while (isRunning.get()) {
@@ -38,10 +38,10 @@ public class ReadingThread extends Thread {
                     // Write data to queue if AODV is enabled
                     if (AODV) {
                         String payload = new String(readBuffer, StandardCharsets.UTF_8);
-                        console.printMessage("ReadingThread >>> Adding payload to queue: " + payload + "\n");
+                        //console.printMessage("ReadingThread >>> Adding payload to queue: " + payload + "\n");
                         commandQueue.add(payload);
                     } else {
-                        console.printMessage(new String(readBuffer, StandardCharsets.UTF_8));
+                       // console.printMessage(new String(readBuffer, StandardCharsets.UTF_8));
                     }
                 }
             } catch (Exception ignored) {
@@ -49,7 +49,7 @@ public class ReadingThread extends Thread {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
+        }*/
 
     }
 
