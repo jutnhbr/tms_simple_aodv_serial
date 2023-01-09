@@ -17,15 +17,14 @@ public class LoraCLI {
 
     private final Console console = new Console();
     private final SerialManager serialManager = new SerialManager();
-    private final ReadingThread readingThread = new ReadingThread(serialManager, true);
     private final MenuFactory menuFactory = new MenuFactory();
-    private final ProtocolManager protocolManager = new ProtocolManager(serialManager, readingThread);
+    private final ProtocolManager protocolManager = new ProtocolManager(serialManager);
     private final ProtocolThread protocolThread = new ProtocolThread(protocolManager);
 
     public synchronized void start() throws InterruptedException {
 
 
-        do {
+        while(true) {
             console.printMessage("\n" + "SERIAL LORA COMMUNICATOR");
             console.printMenu(menuFactory.menuBuilder("lora"));
             int selection = console.readIntegerFromInput(">>> ");
@@ -43,19 +42,18 @@ public class LoraCLI {
                         serialManager.connect(serialManager.getPortByName(console.readStringFromInput("Enter Port Name: ")));
                         console.printMessage(serialManager.getActivePort().getSystemPortName().toUpperCase()
                                 + " | " + serialManager.getActivePort().getDescriptivePortName() + " is now open.\n");
-                        readingThread.start();
-                        protocolThread.start();
                     }
                     break;
                 case 3:
-                    console.printMessage("Configuring RX Mode ... \n");
-                    serialManager.writeData(AT.AT_RX.getCommand());
-                    Thread.sleep(2000);
                     console.printMessage("\nConfiguring Config String ...\n");
                     serialManager.writeData(serialManager.getATConfigString());
                     Thread.sleep(2000);
                     console.printMessage("\nSet Dest Address to FFFF ...\n");
                     serialManager.writeData("AT+DEST=FFFF");
+                    Thread.sleep(2000);
+                    protocolThread.start();
+                    console.printMessage("Configuring RX Mode ... \n");
+                    serialManager.writeData(AT.AT_RX.getCommand());
                     Thread.sleep(2000);
                     break;
                 case 4:
@@ -89,7 +87,6 @@ public class LoraCLI {
 
             }
         }
-        while(true);
     }
 }
 
