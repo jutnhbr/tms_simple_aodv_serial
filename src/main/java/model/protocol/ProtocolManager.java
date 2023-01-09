@@ -21,7 +21,7 @@ import java.util.Objects;
 public class ProtocolManager {
 
     // Node Information
-    private final String ownAddr = "0002";
+    private final String ownAddr = "0008";
     // Local Network Data
     private int localSeqNum = 0;
     private int localReq = 0;
@@ -42,16 +42,14 @@ public class ProtocolManager {
     private RREQ bufferedRREQ;
     // Config Stuff
     private final RoutingTableManager routingTableManager = new RoutingTableManager();
-    private final ReadingThread readingThread;
     private final SerialManager serialManager;
     private final Console console = new Console();
 
     /*
      * Init on start
      */
-    public ProtocolManager(SerialManager serialManager, ReadingThread readingThread) {
+    public ProtocolManager(SerialManager serialManager) {
         this.serialManager = serialManager;
-        this.readingThread = readingThread;
         init();
     }
 
@@ -144,7 +142,7 @@ public class ProtocolManager {
         BitString rrep = RREPtoBitString(routeReply);
         console.printMessage("ProtocolManager >>> Sending RREP: " + rrep.toString() + " with length " + rrep.getLength() + "bits.\n");
         String encodedRREP = encodeBase64(rrep.toNumber().toByteArray());
-        serialManager.writeData("AT+SEND=9");
+        serialManager.writeData("AT+SEND=" + encodedRREP.getBytes().length);
         Thread.sleep(2000);
         serialManager.writeData(encodedRREP);
 
@@ -169,24 +167,25 @@ public class ProtocolManager {
     // wait for reply in a loop
 
 
-
     private void waitForReply() throws InterruptedException {
         while (waitingForRREP) {
             if ((System.currentTimeMillis() - startTime) < currentWaitingTime) {
                 Thread.sleep(50);
             } else {
-                RREQRetries++;
-                this.localReq++;
-                this.startTime = System.currentTimeMillis();
-                currentWaitingTime = (int) Math.pow(2, RREQRetries) * NET_TRAVERSAL_TIME;
-                console.printMessage("ProtocolManager >>> RREQ Timeout. Retrying RREQ " + RREQRetries + " of " + RREQ_RETRIES_MAX + " times.");
-                sendRREQBroadcast(bufferedRREQ);
-
                 if (RREQRetries >= RREQ_RETRIES_MAX) {
+                    console.printMessage("ProtocolManager >>> RREQ retries exceeded. No route found.\n");
                     waitingForRREP = false;
                     resetWaitingForRREP();
                     // TODO: Send Destination unreachable Message
+                } else {
+                    RREQRetries++;
+                    this.localReq++;
+                    this.startTime = System.currentTimeMillis();
+                    currentWaitingTime = (int) Math.pow(2, RREQRetries) * NET_TRAVERSAL_TIME;
+                    console.printMessage("ProtocolManager >>> RREQ Timeout. Retrying RREQ " + RREQRetries + " of " + RREQ_RETRIES_MAX + " times.");
+                    sendRREQBroadcast(bufferedRREQ);
                 }
+
             }
         }
         resetWaitingForRREP();
@@ -208,10 +207,9 @@ public class ProtocolManager {
 
     public void receiveIncomingPayload() throws InterruptedException {
         String payload;
-
         while (true) {
-            if (readingThread.getCommandQueue().peek() != null) {
-                payload = readingThread.getCommandQueue().poll();
+            if (serialManager.getCommandQueue().peek() != null) {
+                payload = serialManager.getCommandQueue().poll();
                 // Split LR,XXXX,XX, from Payload
                 assert payload != null;
                 String[] payloadSplit = payload.split(",");
@@ -287,7 +285,7 @@ public class ProtocolManager {
                 // Set Seq Number to max of current and received Seq Number
                 String destSeqNumForEntry = String.valueOf(Math.max(Integer.parseInt(sourceSeqNum), Integer.parseInt(entry.getDestSeqNum())));
                 // Update Lifetime to max of current and received Lifetime
-                String lifeTime = String.valueOf(Math.max(Integer.parseInt(entry.getLifetime()), System.currentTimeMillis() + 2 * NET_TRAVERSAL_TIME - 2L * Integer.parseInt(hopCount) * NET_TRAVERSAL_TIME));
+                String lifeTime = String.valueOf(Math.max(Long.parseLong(entry.getLifetime()), System.currentTimeMillis() + 2 * NET_TRAVERSAL_TIME - 2L * Integer.parseInt(hopCount) * NET_TRAVERSAL_TIME));
                 // Update Entry and set next hop to buffered prevHop
                 entry.setDestSeqNum(destSeqNumForEntry);
                 entry.setValidDestSeqNum(true);
@@ -316,7 +314,7 @@ public class ProtocolManager {
                     && Integer.parseInt(hopCount) < Integer.parseInt(reverseRoutingEntry.getHopCount()))) {
 
                 String destSeqNumForEntry = String.valueOf(Math.max(Integer.parseInt(destSeqNum), Integer.parseInt(reverseRoutingEntry.getDestSeqNum())));
-                String lifeTime = String.valueOf(Math.max(Integer.parseInt(reverseRoutingEntry.getLifetime()),
+                String lifeTime = String.valueOf(Math.max(Long.parseLong(reverseRoutingEntry.getLifetime()),
                         System.currentTimeMillis() + 2 * NET_TRAVERSAL_TIME - 2L * Integer.parseInt(hopCount) * NET_TRAVERSAL_TIME));
 
                 reverseRoutingEntry.setDestSeqNum(destSeqNumForEntry);
@@ -451,7 +449,11 @@ public class ProtocolManager {
             // Increment HopCount
             rrep.setHopCount(incrementFrame(hopCount, "%6s"));
             // Update Destination Address
-            rrep.setDestAddr(new BitString(findReverseRoutingEntry(destinationAddress).getDestAddr()));
+            if(findReverseRoutingEntry(destinationAddress) != null) {
+                rrep.setDestAddr(new BitString(findReverseRoutingEntry(destinationAddress).getDestAddr()));
+            } else {
+                rrep.setDestAddr(new BitString(destinationAddress));
+            }
             // Try to send RREP
             try {
                 sendRREP(rrep);
@@ -465,8 +467,12 @@ public class ProtocolManager {
         }
 
         ReverseRoutingEntry revEntry = findReverseRoutingEntry(destinationAddress);
-        revEntry.setLifetime(String.valueOf(Math.max(Long.parseLong(revEntry.getLifetime()), System.currentTimeMillis() + ACTIVE_ROUTE_TIMEOUT)));
-        prevEntry.addPrecursor(originatorAddress);
+        if (revEntry != null) {
+            revEntry.setLifetime(String.valueOf(Math.max(Long.parseLong(revEntry.getLifetime()), System.currentTimeMillis() + ACTIVE_ROUTE_TIMEOUT)));
+        }
+        if(prevEntry != null) {
+            prevEntry.addPrecursor(originatorAddress);
+        }
     }
 
 
