@@ -4,19 +4,22 @@ import com.fazecast.jSerialComm.SerialPort;
 import com.fazecast.jSerialComm.SerialPortDataListener;
 import com.fazecast.jSerialComm.SerialPortEvent;
 import org.apache.commons.lang3.StringUtils;
+import view.Console;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 
-public class  Listener implements SerialPortDataListener {
+public class Listener implements SerialPortDataListener {
 
     private final ConcurrentLinkedQueue<String> commandQueue;
+    private final Console console = new Console();
 
     public Listener(ConcurrentLinkedQueue<String> commandQueue) {
         this.commandQueue = commandQueue;
     }
 
     String str = "";
+
     @Override
     public int getListeningEvents() {
         return SerialPort.LISTENING_EVENT_DATA_AVAILABLE;
@@ -26,24 +29,20 @@ public class  Listener implements SerialPortDataListener {
     public void serialEvent(SerialPortEvent serialPortEvent) {
 
         byte[] buffer = new byte[serialPortEvent.getSerialPort().bytesAvailable()];
-        serialPortEvent.getSerialPort().readBytes(buffer,buffer.length);
+        serialPortEvent.getSerialPort().readBytes(buffer, buffer.length);
         str += new String(buffer);
-        if(!str.contains("\r\n")){
+        if (!str.contains("\r\n")) {
             return;
-        }else {
+        } else {
             buffer = str.getBytes();
             str = "";
         }
-        String response = StringUtils.substringBefore(new String(buffer),"\r");
-        System.out.println(response);
-        if(response.contains("AT,")){
-            System.out.println("Listener >>> Received AT Command. Not adding to queue.");
+        String response = StringUtils.substringBefore(new String(buffer), "\r");
+        if (response.contains("AT,")) {
+            console.printMessage("Listener >>> Received AT Command. Not adding to queue." + "\n");
         } else {
-            System.out.println("Listener >>> Received Payload " + response + " Added to queue");
+            console.printMessage("Listener >>> Received Payload " + response + " Added to queue" + "\n");
             commandQueue.add(response);
         }
-
-
-
     }
 }
