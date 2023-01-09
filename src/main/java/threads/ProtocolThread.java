@@ -11,7 +11,7 @@ public class ProtocolThread extends Thread {
     }
 
 
-    public synchronized void run() {
+    public void run() {
         try {
             protocolManager.receiveIncomingPayload();
         } catch (InterruptedException e) {
