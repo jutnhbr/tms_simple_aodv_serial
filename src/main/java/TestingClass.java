@@ -112,7 +112,7 @@ public class TestingClass {
         byte[] decodedPayload_ = Base64.getDecoder().decode(pload);
         System.out.println("Decoded Payload Bytes: " + Arrays.toString(decodedPayload_));
 
-        ProtocolManager protocolManager = new ProtocolManager(null, null);
+        ProtocolManager protocolManager = new ProtocolManager(null);
         // protocolManager.parseMessageType(test);
         // protocolManager.receiveIncomingPayload(pl.getBytes());
 
