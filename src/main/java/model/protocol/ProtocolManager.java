@@ -1,16 +1,11 @@
-// AT+SEND=128 = 128byte | Receive = bytes hexadecimal 80 -> not 80 bytes
 package model.protocol;
 
-import com.fazecast.jSerialComm.SerialPort;
-import com.fazecast.jSerialComm.SerialPortDataListener;
-import com.fazecast.jSerialComm.SerialPortEvent;
 import model.SerialManager;
 import model.messageTypes.*;
 import model.routing.ReverseRoutingEntry;
 import model.routing.RoutingEntry;
 import model.routing.RoutingTableManager;
 import org.uncommons.maths.binary.BitString;
-import threads.ReadingThread;
 import view.Console;
 
 import java.math.BigInteger;
@@ -21,7 +16,7 @@ import java.util.Objects;
 public class ProtocolManager {
 
     // Node Information
-    private final String ownAddr = "0008";
+    private final String ownAddr = "8";
     // Local Network Data
     private int localSeqNum = 0;
     private int localReq = 0;
@@ -142,7 +137,7 @@ public class ProtocolManager {
         BitString rrep = RREPtoBitString(routeReply);
         console.printMessage("ProtocolManager >>> Sending RREP: " + rrep.toString() + " with length " + rrep.getLength() + "bits.\n");
         String encodedRREP = encodeBase64(rrep.toNumber().toByteArray());
-        serialManager.writeData("AT+SEND=" + encodedRREP.getBytes().length);
+        serialManager.writeData("AT+SEND=12");
         Thread.sleep(2000);
         serialManager.writeData(encodedRREP);
 
@@ -182,7 +177,7 @@ public class ProtocolManager {
                     this.localReq++;
                     this.startTime = System.currentTimeMillis();
                     currentWaitingTime = (int) Math.pow(2, RREQRetries) * NET_TRAVERSAL_TIME;
-                    console.printMessage("ProtocolManager >>> RREQ Timeout. Retrying RREQ " + RREQRetries + " of " + RREQ_RETRIES_MAX + " times.");
+                    console.printMessage("ProtocolManager >>> RREQ Timeout. Retrying RREQ " + RREQRetries + " of " + RREQ_RETRIES_MAX + " times.\n");
                     sendRREQBroadcast(bufferedRREQ);
                 }
 
@@ -275,6 +270,8 @@ public class ProtocolManager {
         // Add to the list ?
         //--------------------------------------------------------------------------------------------------------------
 
+        destAddr = convertAddressToString(destAddr);
+
         RoutingEntry entry = findRoutingEntry(destAddr);
         if (entry != null) {
             // If entry has no valid sequence number, update it
@@ -331,6 +328,9 @@ public class ProtocolManager {
         }
         //--------------------------------------------------------------------------------------------------------------
 
+        System.out.println(destAddr);
+        System.out.println(ownAddr);
+
         if (destAddr.equals(ownAddr) || findRoutingEntry(destAddr).isValidDestSeqNum()) {
             console.printMessage("ProtocolManager >>> RREQ for own address received. Sending RREP.\n");
             // Generate new RREP
@@ -347,7 +347,7 @@ public class ProtocolManager {
                     new BitString("000000"),
                     newHopCount,
                     new BitString(reqID),
-                    new BitString(destAddr),
+                    new BitString(convertAddressToBinary(destAddr)),
                     new BitString(destSeqNum),
                     new BitString(sourceAddr),
                     new BitString(sourceSeqNum)
@@ -362,7 +362,7 @@ public class ProtocolManager {
         String lifeTime;
 
         if (destAddr.equals(ownAddr)) {
-            console.printMessage("ProtocolManager >>> RREQ received for own Address. Sending RREP...\n");
+            console.printMessage("ProtocolManager >>> Generating RREP...\n");
             // Reset Hop Count to 0
             String hopCount = "00000000";
             // Set Lifetime to MY_ROUTE_TIMEOUT
@@ -372,6 +372,7 @@ public class ProtocolManager {
             if (localSeqNum + 1 == Integer.parseInt(destSeqNum)) {
                 localSeqNum = localSeqNum + 1;
             }
+
             return new RREP(new BitString(lifeTime), new BitString(sourceAddr), new BitString(localSeqAsBinary()), new BitString(ownAddrAsBinary()), new BitString(hopCount));
         } else {
             RoutingEntry entry = findRoutingEntry(destAddr);
@@ -449,7 +450,7 @@ public class ProtocolManager {
             // Increment HopCount
             rrep.setHopCount(incrementFrame(hopCount, "%6s"));
             // Update Destination Address
-            if(findReverseRoutingEntry(destinationAddress) != null) {
+            if (findReverseRoutingEntry(destinationAddress) != null) {
                 rrep.setDestAddr(new BitString(findReverseRoutingEntry(destinationAddress).getDestAddr()));
             } else {
                 rrep.setDestAddr(new BitString(destinationAddress));
@@ -470,7 +471,7 @@ public class ProtocolManager {
         if (revEntry != null) {
             revEntry.setLifetime(String.valueOf(Math.max(Long.parseLong(revEntry.getLifetime()), System.currentTimeMillis() + ACTIVE_ROUTE_TIMEOUT)));
         }
-        if(prevEntry != null) {
+        if (prevEntry != null) {
             prevEntry.addPrecursor(originatorAddress);
         }
     }
@@ -570,10 +571,12 @@ public class ProtocolManager {
     public BitString RREPtoBitString(RREP routeReply) {
         return new BitString(
                 routeReply.getType().toString() +
+                        routeReply.getLifetime() +
                         routeReply.getDestAddr() +
                         routeReply.getDestSeq() +
-                        routeReply.getHopCount() +
-                        routeReply.getSourceAddr()
+                        routeReply.getSourceAddr() +
+                        routeReply.getHopCount()
+
 
         );
     }
@@ -612,6 +615,14 @@ public class ProtocolManager {
         int frameCount = Integer.parseInt(frameBitString.toString(), 2);
         frameCount++;
         return new BitString(String.format(format, Integer.toBinaryString(frameCount)).replace(' ', '0'));
+    }
+
+    public String convertAddressToString(String address) {
+        return Integer.toString(Integer.parseInt(address, 2), 16);
+    }
+
+    public String convertAddressToBinary(String address) {
+        return String.format("%16s", Integer.toBinaryString(Integer.parseInt(address, 16))).replace(' ', '0');
     }
 
     // Access to the Routing Tables for the LoraCLI
