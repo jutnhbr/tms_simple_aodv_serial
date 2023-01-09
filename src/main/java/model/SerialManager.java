@@ -8,6 +8,7 @@ import threads.Listener;
 import util.MessageUtil;
 
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 public class SerialManager {
 
@@ -19,6 +20,8 @@ public class SerialManager {
     private final int[] standardPortConfig = {115200, 8, 1, 0};
     // AT COMMAND CONFIG
     private final String ATConfigString = AT.AT_CFG.getCommand() + "433920000,5,6,10,4,1,0,0,0,0,3000,8,4";
+
+    private final ConcurrentLinkedQueue<String> commandQueue = new ConcurrentLinkedQueue<>();
     // Port
     private SerialPort activePort;
     // Util
@@ -73,7 +76,8 @@ public class SerialManager {
         activePort = port;
         boolean check = activePort.openPort();
         if (check) {
-            activePort.addDataListener(new Listener());
+            Listener listener = new Listener(commandQueue);
+            activePort.addDataListener(listener);
             return "\nSerialManager >>> Connected to: " + activePort.getSystemPortName().toUpperCase() + " | " + activePort.getDescriptivePortName() + "\n";
         } else {
             return "\nSerialManager >>> ERROR: Could not connect to " + activePort.getSystemPortName().toUpperCase() + "\n";
@@ -111,6 +115,10 @@ public class SerialManager {
 
     public SerialPort getActivePort() {
         return activePort;
+    }
+
+    public ConcurrentLinkedQueue<String> getCommandQueue() {
+        return commandQueue;
     }
 }
 
