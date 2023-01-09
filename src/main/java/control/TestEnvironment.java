@@ -20,24 +20,35 @@ public class TestEnvironment {
         serialTester.connect(serialTester.getPortByName(console.readStringFromInput("Enter Port Name: ")));
         console.printMessage("Tester connected to "+ serialTester.getActivePort().getSystemPortName() + "\n");
         console.printMessage("Starting Parsing Thread...\n");
-        // ParseTesterThread test = new ParseTesterThread(serialTester);
-        // test.start();
-        // console.printMessage("Tester is running ...\n");
-        BitString payloadRREQ = new BitString("000001000000000001000000111111111111111100000001101011011101110100011001");
-        BitString payloadRREP = new BitString("000010000000000001000000111111111111111100000001101011011101110100011001");
-        String encodedPayload = Base64.getEncoder().encodeToString(payloadRREQ.toNumber().toByteArray());
-        String encodedPayload2 = Base64.getEncoder().encodeToString(payloadRREP.toNumber().toByteArray());
-        String lora = "LR,XXXX,XX,";
+
+        String destAddr = "0008";
+        String sourceAddr = "0003";
+        int destSeq_ = 1;
+        int sourceSeq_ = 25;
+        String destAddrBinary = String.format("%16s", Integer.toBinaryString(Integer.parseInt(destAddr, 16))).replace(' ', '0');
+        String sourceAddrBinary = String.format("%16s", Integer.toBinaryString(Integer.parseInt(sourceAddr, 16))).replace(' ', '0');
+        String d_seq = String.format("%8s", Integer.toBinaryString(destSeq_)).replace(' ', '0');
+        String s_seq = String.format("%8s", Integer.toBinaryString(sourceSeq_)).replace(' ', '0');
+        BitString type = new BitString("000001");
+        BitString flags = new BitString("000000");
+        BitString hopCount = new BitString("000001");
+        BitString reqID = new BitString("000000");
+        BitString destAddrS = new BitString(destAddrBinary);
+        BitString destSeq = new BitString(d_seq);
+        BitString sourceAddrS = new BitString(sourceAddrBinary);
+        BitString sourceSeq = new BitString(s_seq);
+        BitString payloadForRREQ = new BitString(type.toString() + flags + hopCount + reqID + destAddrS + destSeq + sourceAddrS + sourceSeq);
+
+        String encodedPayload = Base64.getEncoder().encodeToString(payloadForRREQ.toNumber().toByteArray());
+
+        String lora = "LR,0003,XX,";
+
         String message1 = lora + encodedPayload;
-        String message2 = lora + encodedPayload2;
+
         System.out.println("Payload for RREQ -->" + message1);
-        System.out.println("Payload for RREP -->" + message2);
         Thread.sleep(4000);
         serialTester.writeData(message1);
-        // Thread.sleep(4000);
-        //serialTester.writeData(message1);
-        //Thread.sleep(4000);
-        //serialTester.writeData(message2);
+
 
 
     }
