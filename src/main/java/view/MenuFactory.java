@@ -34,8 +34,10 @@ public class MenuFactory {
             menu.add("1: Show Available Ports");
             menu.add("2: Connect to Port");
             menu.add("3: Auto Configure Send Mode");
-            menu.add("4: Send Route Request");
+            menu.add("4: Send Manual Route Request");
             menu.add("5: Show Routing Table");
+            menu.add("6: Send Data Packet");
+            menu.add("7: Send Test Command to AT Module");
             menu.add("0: Exit");
             return menu;
         }
