@@ -18,7 +18,7 @@ public class RoutingTableManager {
     }
 
     public List<RoutingEntry> getRoutingTable() {
-        return routingTable;
+        return new ArrayList<>(routingTable);
     }
 
     public List<ReverseRoutingEntry> getReverseRoutingTable() {
