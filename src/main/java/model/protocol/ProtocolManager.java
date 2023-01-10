@@ -16,7 +16,7 @@ import java.util.Objects;
 public class ProtocolManager {
 
     // Node Information
-    private final String ownAddr = "8";
+    private final String ownAddr = "2";
     // Local Network Data
     private int localSeqNum = 0;
     private int localReq = 0;
@@ -221,7 +221,13 @@ public class ProtocolManager {
                 payloadString = payloadString.replace("\n", "").replace("\r", "");
                 console.printMessage("ProtocolManager >>> Received payload: " + payloadString + "\n");
                 byte[] payloadBytes = decodeBase64(payloadString);
-                String binaryData = new BigInteger(1, payloadBytes).toString(2);
+                String binaryData;
+                try {
+                    binaryData = new BigInteger(1, payloadBytes).toString(2);
+                } catch(NullPointerException e) {
+                    console.printMessage("ProtocolManager >>> Received invalid payload: " + payload + "\n");
+                    return;
+                }
                 parseMessageType(binaryData);
             } else {
                 Thread.sleep(2000);
@@ -231,6 +237,10 @@ public class ProtocolManager {
 
 
     public void parseMessageType(String incomingMessage) throws InterruptedException {
+        if(incomingMessage.length() < 66) {
+            console.printMessage("ProtocolManager >>> Received invalid message: " + incomingMessage + "\n");
+            return;
+        }
         String msgType = incomingMessage.substring(0, incomingMessage.length() - 66);
         switch (Integer.parseInt(msgType, 2)) {
             case 1 -> {
@@ -398,14 +408,24 @@ public class ProtocolManager {
         String destinationSequence = incomingMessage.substring(incomingMessage.length() - 32, incomingMessage.length() - 24);
         String originatorAddress = incomingMessage.substring(incomingMessage.length() - 24, incomingMessage.length() - 8);
         String hopCount = incomingMessage.substring(incomingMessage.length() - 8);
-        //--------------------------------------------------------------------------------------------------------------
+        //-----------------
+        // ---------------------------------------------------------------------------------------------
+
+        destinationAddress = convertAddressToString(destinationAddress);
 
         // Create new RREP for forwarding
-        RREP rrep = new RREP(new BitString(lifeTime),
-                new BitString(destinationAddress),
-                new BitString(destinationSequence),
-                new BitString(hopCount),
-                new BitString(originatorAddress));
+        RREP rrep = null;
+        try {
+             rrep = new RREP(new BitString(lifeTime),
+                    new BitString(destinationAddress),
+                    new BitString(destinationSequence),
+                    new BitString(hopCount),
+                    new BitString(originatorAddress));
+        } catch (Exception e) {
+            console.printErrMessage("ProtocolManager >>> Error while creating RREP for forwarding. " + e.getMessage() + "\n");
+            return;
+        }
+
 
         // Check Routing Table for existing routes
         RoutingEntry prevEntry = findRoutingEntry(prevHop);
@@ -550,7 +570,12 @@ public class ProtocolManager {
     }
 
     private byte[] decodeBase64(String base64String) {
-        return Base64.getDecoder().decode(base64String);
+        try {
+            return Base64.getDecoder().decode(base64String);
+        } catch (IllegalArgumentException e) {
+            console.printErrMessage("Received Illegal Payload");
+            return null;
+        }
     }
 
     // Convert a RREQ to BitString
