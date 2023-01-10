@@ -39,7 +39,7 @@ public class Listener implements SerialPortDataListener {
         }
         String response = StringUtils.substringBefore(new String(buffer), "\r");
         if (response.contains("AT,")) {
-            console.printMessage("Listener >>> Received AT Command. Not adding to queue." + "\n");
+            console.printMessage("Listener >>> Received AT Command: " + response + " - Not adding to queue." + "\n");
         } else {
             console.printMessage("Listener >>> Received Payload " + response + " Added to queue" + "\n");
             commandQueue.add(response);
