@@ -61,12 +61,11 @@ public class LoraCLI {
                     protocolManager.generateRREQ(destAddr);
                     break;
                 case 5:
-                    console.printMessage(
-                            "****************************ROUTING TABLE****************************\n"
-                            + protocolManager.getRoutingTableManager().getRoutingTable().toString()
-                            + "\n************************REVERSE ROUTING TABLE************************\n"
-                            + protocolManager.getRoutingTableManager().getReverseRoutingTable().toString()
-                            + "\n*********************************************************************\n");
+                    console.printMessage("****************************ROUTING TABLE****************************\n");
+                    protocolManager.getRoutingTableManager().getRoutingTable().forEach(System.out::println);
+                    console.printMessage("\n************************REVERSE ROUTING TABLE************************\n");
+                    protocolManager.getRoutingTableManager().getReverseRoutingTable().forEach(System.out::println);
+                    console.printMessage("\n*********************************************************************\n");
                     break;
                 case 6:
                     String data = console.readStringFromInput("Enter Data: ");
