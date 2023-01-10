@@ -9,6 +9,7 @@ import org.uncommons.maths.binary.BitString;
 import view.Console;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -119,6 +120,11 @@ public class ProtocolManager {
         // Generate binary string for RREQ
         BitString rreq = RREQtoBitString(routeRequest);
 
+        if (rreq.getLength() != 72) {
+            console.printMessage("ProtocolManager >>> Invalid RREP Length, not sending.\n");
+            return;
+        }
+
         console.printMessage("ProtocolManager >>> Sending RREQ: " + rreq.toString() + " with length " + rreq.getLength() + "bits.\n");
         // Encode RREQ
         String encodedRREQ = encodeBase64(rreq.toNumber().toByteArray());
@@ -135,6 +141,11 @@ public class ProtocolManager {
 
     public void sendRREP(RREP routeReply) throws InterruptedException {
         BitString rrep = RREPtoBitString(routeReply);
+        // Do not send if RREP is longer than 72 bits
+        if (rrep.getLength() != 72) {
+            console.printMessage("ProtocolManager >>> Invalid RREP Length, not sending.\n");
+            return;
+        }
         console.printMessage("ProtocolManager >>> Sending RREP: " + rrep.toString() + " with length " + rrep.getLength() + "bits.\n");
         String encodedRREP = encodeBase64(rrep.toNumber().toByteArray());
         serialManager.writeData("AT+SEND=12");
@@ -150,7 +161,7 @@ public class ProtocolManager {
             BitString data = DATAtoBitString(dataPacket);
             console.printMessage("ProtocolManager >>> Sending DATA: " + data + " with length " + data.getLength() + "bits.\n");
             String encodedDATA = encodeBase64(data.toNumber().toByteArray());
-            serialManager.writeData("AT+SEND=6");
+            serialManager.writeData("AT+SEND="+encodedDATA.getBytes().length);
             Thread.sleep(2000);
             serialManager.writeData(encodedDATA);
         } else {
@@ -212,7 +223,7 @@ public class ProtocolManager {
                 // Check if payload contains all necessary data
                 if (payloadSplit.length < 4) {
                     console.printMessage("ProtocolManager >>> Received invalid payload: " + payload + "\n");
-                    return;
+                    continue;
                 }
                 // Save [1] XXXX as prevHop
                 this.prevHop = payloadSplit[1];
@@ -221,12 +232,16 @@ public class ProtocolManager {
                 payloadString = payloadString.replace("\n", "").replace("\r", "");
                 console.printMessage("ProtocolManager >>> Received payload: " + payloadString + "\n");
                 byte[] payloadBytes = decodeBase64(payloadString);
+                if (payloadBytes == null) {
+                    continue;
+                }
+
                 String binaryData;
                 try {
                     binaryData = new BigInteger(1, payloadBytes).toString(2);
-                } catch(NullPointerException e) {
+                } catch (NullPointerException e) {
                     console.printMessage("ProtocolManager >>> Received invalid payload: " + payload + "\n");
-                    return;
+                    continue;
                 }
                 parseMessageType(binaryData);
             } else {
@@ -237,12 +252,20 @@ public class ProtocolManager {
 
 
     public void parseMessageType(String incomingMessage) throws InterruptedException {
-        if(incomingMessage.length() < 66) {
+        if (incomingMessage.length() < 66) {
             console.printMessage("ProtocolManager >>> Received invalid message: " + incomingMessage + "\n");
             return;
         }
         String msgType = incomingMessage.substring(0, incomingMessage.length() - 66);
-        switch (Integer.parseInt(msgType, 2)) {
+        int type;
+        try {
+            type = Integer.parseInt(msgType, 2);
+        } catch (NumberFormatException e) {
+            console.printMessage("ProtocolManager >>> Received invalid message: " + incomingMessage + "\n");
+            return;
+        }
+
+        switch (type) {
             case 1 -> {
                 console.printMessage("ProtocolManager >>> Payload parsed as RREQ.\n");
                 processRREQ(incomingMessage);
@@ -378,6 +401,7 @@ public class ProtocolManager {
             // Set Lifetime to MY_ROUTE_TIMEOUT
             lifeTime = String.valueOf(MY_ROUTE_TIMEOUT);
             lifeTime = lifetimeToBinary(lifeTime);
+            System.out.println(lifeTime + "|" + lifeTime.length());
             // Increment last known Seq Number
             if (localSeqNum + 1 == Integer.parseInt(destSeqNum)) {
                 localSeqNum = localSeqNum + 1;
@@ -393,6 +417,7 @@ public class ProtocolManager {
 
             lifeTime = String.valueOf(Long.parseLong(entry.getLifetime()) - System.currentTimeMillis());
             lifeTime = lifetimeToBinary(lifeTime);
+            System.out.println(lifeTime + "|" + lifeTime.length());
 
             return new RREP(new BitString(lifeTime), new BitString(sourceAddr), new BitString(entry.getDestSeqNum()), new BitString(ownAddrAsBinary()), new BitString(entry.getHopCount()));
         }
@@ -416,7 +441,7 @@ public class ProtocolManager {
         // Create new RREP for forwarding
         RREP rrep = null;
         try {
-             rrep = new RREP(new BitString(lifeTime),
+            rrep = new RREP(new BitString(lifeTime),
                     new BitString(destinationAddress),
                     new BitString(destinationSequence),
                     new BitString(hopCount),
@@ -548,12 +573,21 @@ public class ProtocolManager {
     }
 
     public void generateDATA(String message, String destAddr) {
-        DATA data = new DATA(
+        destAddr = convertAddressToBinary(destAddr);
+
+        byte[] data = message.getBytes(StandardCharsets.UTF_8);
+        // convert data to binary string
+        StringBuilder dataAsBinary = new StringBuilder();
+        for (byte b : data) {
+            dataAsBinary.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
+        }
+
+        DATA dataPacket = new DATA(
                 new BitString(destAddr),
-                new BitString(message)
+                new BitString(dataAsBinary.toString())
         );
         try {
-            sendDATA(data);
+            sendDATA(dataPacket);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
