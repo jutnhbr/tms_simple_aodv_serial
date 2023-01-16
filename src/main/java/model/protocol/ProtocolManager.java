@@ -121,7 +121,7 @@ public class ProtocolManager {
         BitString rreq = RREQtoBitString(routeRequest);
 
         if (rreq.getLength() != 72) {
-            console.printMessage("ProtocolManager >>> Invalid RREP Length, not sending.\n");
+            console.printMessage("ProtocolManager >>> Invalid RREQ Length, not sending.\n");
             return;
         }
 
@@ -414,8 +414,7 @@ public class ProtocolManager {
 
             entry.addPrecursor(sourceAddr);
             reverseEntry.addPrecursor(entry.getNextHop());
-
-            lifeTime = String.valueOf(Long.parseLong(entry.getLifetime()) - System.currentTimeMillis());
+            lifeTime = String.valueOf( System.currentTimeMillis() -Long.parseLong(entry.getLifetime()));
             lifeTime = lifetimeToBinary(lifeTime);
             System.out.println(lifeTime + "|" + lifeTime.length());
 
