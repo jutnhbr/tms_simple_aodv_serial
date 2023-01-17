@@ -3,10 +3,12 @@
  */
 
 import control.LoraCLI;
+import model.messageTypes.DATA;
 import model.protocol.ProtocolManager;
 import org.uncommons.maths.binary.BitString;
 
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Base64;
 
@@ -15,9 +17,9 @@ public class TestingClass {
     public static void main(String[] args) throws InterruptedException {
 
         LoraCLI loraCLI = new LoraCLI();
-       // loraCLI.start();
+        // loraCLI.start();
 
-        BitString bitString = new BitString("000001");
+   /*     BitString bitString = new BitString("000001");
         // parse to int
         int type__ = Integer.parseInt(bitString.toString(), 2);
         System.out.println(type__);
@@ -137,8 +139,33 @@ public class TestingClass {
             data_ = data.toString().substring(22, data.getLength());
         }
         System.out.println(data_);
-        System.out.println(data_.length());
+        System.out.println(data_.length());*/
+        BitString type = new BitString("000000");
+        int dest = 5;
+        String destBinary = String.format("%16s", Integer.toBinaryString(dest)).replace(' ', '0');
+        BitString destAddr = new BitString(destBinary);
+
+        byte[] typeBinary = type.toNumber().toByteArray();
+        byte[] destAddressBinary = destAddr.toNumber().toByteArray();
 
 
+        String message = "Hallo";
+
+        byte[] binaryMessage = new byte[typeBinary.length + destAddressBinary.length + message.length()];
+
+        System.arraycopy(typeBinary, 0, binaryMessage, 0, typeBinary.length);
+        System.arraycopy(destAddressBinary, 0, binaryMessage, typeBinary.length, destAddressBinary.length);
+
+        for (int i = 0; i < message.length(); i++) {
+            int c = message.charAt(i);
+            binaryMessage[typeBinary.length + destAddressBinary.length + i] = (byte) c;
+        }
+
+        String encodedMessage = Base64.getEncoder().encodeToString(binaryMessage);
+        System.out.println(encodedMessage);
+        System.out.println("AAAVIYWxsbw=");
     }
+
+
 }
+

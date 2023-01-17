@@ -21,7 +21,7 @@ public class TestEnvironment {
         console.printMessage("Tester connected to "+ serialTester.getActivePort().getSystemPortName() + "\n");
         console.printMessage("Starting Parsing Thread...\n");
 
-        String destAddr = "0008";
+       /* String destAddr = "0008";
         String sourceAddr = "0003";
         int destSeq_ = 1;
         int sourceSeq_ = 25;
@@ -39,7 +39,9 @@ public class TestEnvironment {
         BitString sourceSeq = new BitString(s_seq);
         BitString payloadForRREQ = new BitString(type.toString() + flags + hopCount + reqID + destAddrS + destSeq + sourceAddrS + sourceSeq);
 
-        String encodedPayload = Base64.getEncoder().encodeToString(payloadForRREQ.toNumber().toByteArray());
+        String encodedPayload = Base64.getEncoder().encodeToString(payloadForRREQ.toNumber().toByteArray());*/
+
+        String encodedPayload= "AAAVIYWxsbw==";
 
         String lora = "LR,0003,XX,";
 

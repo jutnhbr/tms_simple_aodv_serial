@@ -231,19 +231,23 @@ public class ProtocolManager {
                 String payloadString = payloadSplit[3];
                 payloadString = payloadString.replace("\n", "").replace("\r", "");
                 console.printMessage("ProtocolManager >>> Received payload: " + payloadString + "\n");
-                byte[] payloadBytes = decodeBase64(payloadString);
-                if (payloadBytes == null) {
-                    continue;
-                }
+                if(payloadString.charAt(0) == 'A') {
+                    System.out.println("Data");
+                } else {
+                    byte[] payloadBytes = decodeBase64(payloadString);
+                    if (payloadBytes == null) {
+                        continue;
+                    }
 
-                String binaryData;
-                try {
-                    binaryData = new BigInteger(1, payloadBytes).toString(2);
-                } catch (NullPointerException e) {
-                    console.printMessage("ProtocolManager >>> Received invalid payload: " + payload + "\n");
-                    continue;
+                    String binaryData;
+                    try {
+                        binaryData = new BigInteger(1, payloadBytes).toString(2);
+                    } catch (NullPointerException e) {
+                        console.printMessage("ProtocolManager >>> Received invalid payload: " + payload + "\n");
+                        continue;
+                    }
+                    parseMessageType(binaryData);
                 }
-                parseMessageType(binaryData);
             } else {
                 Thread.sleep(2000);
             }
