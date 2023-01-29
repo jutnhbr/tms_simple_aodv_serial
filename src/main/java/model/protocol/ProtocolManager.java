@@ -5,11 +5,13 @@ import model.messageTypes.*;
 import model.routing.ReverseRoutingEntry;
 import model.routing.RoutingEntry;
 import model.routing.RoutingTableManager;
+import org.apache.commons.lang3.ArrayUtils;
 import org.uncommons.maths.binary.BitString;
 import view.Console;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
 
@@ -161,7 +163,7 @@ public class ProtocolManager {
             BitString data = DATAtoBitString(dataPacket);
             console.printMessage("ProtocolManager >>> Sending DATA: " + data + " with length " + data.getLength() + "bits.\n");
             String encodedDATA = encodeBase64(data.toNumber().toByteArray());
-            serialManager.writeData("AT+SEND="+encodedDATA.getBytes().length);
+            serialManager.writeData("AT+SEND=" + encodedDATA.getBytes().length);
             Thread.sleep(2000);
             serialManager.writeData(encodedDATA);
         } else {
@@ -231,14 +233,16 @@ public class ProtocolManager {
                 String payloadString = payloadSplit[3];
                 payloadString = payloadString.replace("\n", "").replace("\r", "");
                 console.printMessage("ProtocolManager >>> Received payload: " + payloadString + "\n");
-                if(payloadString.charAt(0) == 'A') {
-                    System.out.println("Data");
+
+                if (payloadString.charAt(0) == 'A') {
+                    console.printMessage("ProtocolManager >>> Received UD");
+                    processDATA(payloadString);
                 } else {
+
                     byte[] payloadBytes = decodeBase64(payloadString);
                     if (payloadBytes == null) {
                         continue;
                     }
-
                     String binaryData;
                     try {
                         binaryData = new BigInteger(1, payloadBytes).toString(2);
@@ -252,6 +256,7 @@ public class ProtocolManager {
                 Thread.sleep(2000);
             }
         }
+
     }
 
 
@@ -278,10 +283,6 @@ public class ProtocolManager {
                 console.printMessage("ProtocolManager >>> Payload parsed as RREP.\n");
                 waitingForRREP = false;
                 processRREP(incomingMessage);
-            }
-            case 0 -> {
-                console.printMessage("ProtocolManager >>> Payload parsed as DATA.\n");
-                processDATA(incomingMessage);
             }
             default -> console.printErrMessage("ProtocolManager >>> Received unknown message type: " + msgType);
         }
@@ -418,7 +419,7 @@ public class ProtocolManager {
 
             entry.addPrecursor(sourceAddr);
             reverseEntry.addPrecursor(entry.getNextHop());
-            lifeTime = String.valueOf( System.currentTimeMillis() -Long.parseLong(entry.getLifetime()));
+            lifeTime = String.valueOf(System.currentTimeMillis() - Long.parseLong(entry.getLifetime()));
             lifeTime = lifetimeToBinary(lifeTime);
             System.out.println(lifeTime + "|" + lifeTime.length());
 
@@ -526,9 +527,20 @@ public class ProtocolManager {
 
 
     private void processDATA(String incomingMessage) {
-        String data = incomingMessage.length() > 48 ? incomingMessage.substring(22, 48) : incomingMessage.substring(22);
 
-        console.printMessage("ProtocolManager >>> DATA received:" + data + "\n");
+        byte[] decodedPayloadBytes = decodeBase64(incomingMessage);
+        decodedPayloadBytes = userDataPacketDecode(decodedPayloadBytes);
+        byte[] dest = getRangeArray(decodedPayloadBytes, 1, 4);
+        // put all bytes in one string
+        StringBuilder sb = new StringBuilder();
+        for (byte b : dest) {
+            sb.append(b);
+        }
+        String destString = sb.toString();
+        //TODO: if destAddr not node addr -> RREQ for destAddr
+        String message = new String(getRangeArray(decodedPayloadBytes, 5, decodedPayloadBytes.length - 1));
+        console.printMessage("ProtocolManager >>> Received Message: " + message + " from Address: " + destString);
+
     }
 
     // Create RREQ Message with a specific destination address
@@ -615,6 +627,32 @@ public class ProtocolManager {
         }
     }
 
+    private byte[] userDataPacketDecode(byte[] udPacket) {
+
+        byte[] firstThreeBytes = Arrays.copyOfRange(udPacket, 0, 3);
+
+        byte type = (byte) (firstThreeBytes[0] >> 2);
+        byte addr0 = (byte) (((firstThreeBytes[0] & 0x03) << 2) | ((firstThreeBytes[1] & 0xc0) >> 6));
+        byte addr1 = (byte) ((firstThreeBytes[1] & 0x3C) >> 2);
+        byte addr2 = (byte) (((firstThreeBytes[1] & 0x03) << 2) | ((firstThreeBytes[2] & 0xc0) >> 6));
+        byte addr3 = (byte) ((firstThreeBytes[2] & 0x3C) >> 2);
+
+        byte[] remainingBytes = Arrays.copyOfRange(udPacket, 3, udPacket.length);
+
+        // Add the last 2 bits of the third byte to the beginning of the remaining bytes
+        byte[] modifiedRemainingBytes = new byte[remainingBytes.length + 1];
+        modifiedRemainingBytes[0] = (byte) (firstThreeBytes[2] & 0x03);
+        System.arraycopy(remainingBytes, 0, modifiedRemainingBytes, 1, remainingBytes.length);
+
+        // Decode the remaining bytes
+        byte[] decodedBytes = new byte[modifiedRemainingBytes.length - 1];
+        for (int i = 0; i < decodedBytes.length; i++) {
+            decodedBytes[i] = (byte) (((modifiedRemainingBytes[i] & 0x03) << 6) | ((modifiedRemainingBytes[i + 1] & 0xfc) >> 2));
+        }
+
+        return ArrayUtils.addAll(new byte[]{type, addr0, addr1, addr2, addr3}, decodedBytes);
+    }
+
     // Convert a RREQ to BitString
     public BitString RREQtoBitString(RREQ routeRequest) {
         return new BitString(
@@ -690,6 +728,12 @@ public class ProtocolManager {
     // Access to the Routing Tables for the LoraCLI
     public RoutingTableManager getRoutingTableManager() {
         return routingTableManager;
+    }
+
+    private byte[] getRangeArray(byte[] arr, int from, int to) {
+        var res = new byte[to - from + 1];
+        if (to - from + 1 >= 0) System.arraycopy(arr, from, res, 0, to - from + 1);
+        return res;
     }
 
 
