@@ -1,2 +1,7 @@
 # Project exclude paths
 /target/
+.idea/codeStyles/codeStyleConfig.xml
+.idea/compiler.xml
+.idea/jarRepositories.xml
+.idea/misc.xml
+.idea/vcs.xml

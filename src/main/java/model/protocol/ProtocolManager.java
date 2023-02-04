@@ -167,10 +167,19 @@ public class ProtocolManager {
             Thread.sleep(2000);
             serialManager.writeData(encodedDATA);
         } else {
-            generateRREQ(String.valueOf(dataPacket.getDestAddr()));
+            generateRREQ(fromBinaryString(String.valueOf(dataPacket.getDestAddr())));
+            //generateRREQ(String.valueOf(dataPacket.getDestAddr()));
         }
     }
 
+    public static String fromBinaryString(String binary) {
+        byte[] data = new byte[binary.length() / 8];
+        for (int i = 0; i < binary.length(); i++) {
+            char c = binary.charAt(i);
+            data[i / 8] = (byte) ((data[i / 8] << 1) | (c == '1' ? 1 : 0));
+        }
+        return new String(data, StandardCharsets.UTF_8);
+    }
 
     // wait for reply in a loop
 
