@@ -1,6 +1,16 @@
-Simple Serial Interface Communicator + Tester
+AODV Routing Protocol Implementation + Simple Serial Interface Communicator + Tester
 
-Current Features:
+
+AODV Implementation
+- RREQs, RREPs and UserData Packets
+- Listener to receive Payloads
+- Parsing, Sending and Generating Messages
+- Decode / Encode with Base64
+- Serial Communication
+- Route Management
+- CLI for User interactivity
+
+Serial Communicator Features:
 - SerialManager that handles the serial communication via jSerialComm
 - Simple CLI Implementation to connect and send data to a serial port
 - Configurable Port with Baudrate, Databits, Stopbits, Parity and Flowcontrol
