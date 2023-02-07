@@ -11,6 +11,7 @@ import view.Console;
 
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Objects;
@@ -19,7 +20,7 @@ import java.util.Objects;
 public class ProtocolManager {
 
     // Node Information
-    private final String ownAddr = "2";
+    private final String ownAddr = "13";
     // Local Network Data
     private int localSeqNum = 0;
     private int localReq = 0;
@@ -158,7 +159,13 @@ public class ProtocolManager {
 
     public void sendDATA(DATA dataPacket) throws InterruptedException {
         // Check if route to destination exists
-        RoutingEntry route = findRoutingEntry(String.valueOf(dataPacket.getDestAddr()));
+        System.out.println(convertAddressToString(dataPacket.getDestAddr().toString()));
+        RoutingEntry route = null;
+        if(convertAddressToString(dataPacket.getDestAddr().toString()).length() == 2) {
+             route = findRoutingEntry("00" + convertAddressToString(dataPacket.getDestAddr().toString()));
+        } else if (convertAddressToString(dataPacket.getDestAddr().toString()).length() == 1) {
+             route = findRoutingEntry("000" + convertAddressToString(dataPacket.getDestAddr().toString()));
+        }
         if (route != null) {
             BitString data = DATAtoBitString(dataPacket);
             console.printMessage("ProtocolManager >>> Sending DATA: " + data + " with length " + data.getLength() + "bits.\n");
@@ -167,7 +174,7 @@ public class ProtocolManager {
             Thread.sleep(2000);
             serialManager.writeData(encodedDATA);
         } else {
-            generateRREQ(fromBinaryString(String.valueOf(dataPacket.getDestAddr())));
+            generateRREQ(convertAddressToString(dataPacket.getDestAddr().toString()));
             //generateRREQ(String.valueOf(dataPacket.getDestAddr()));
         }
     }
@@ -421,7 +428,7 @@ public class ProtocolManager {
                 localSeqNum = localSeqNum + 1;
             }
 
-            return new RREP(new BitString(lifeTime), new BitString(sourceAddr), new BitString(localSeqAsBinary()), new BitString(ownAddrAsBinary()), new BitString(hopCount));
+            return new RREP(new BitString(lifeTime), new BitString(ownAddrAsBinary()), new BitString(localSeqAsBinary()), new BitString(sourceAddr), new BitString(hopCount));
         } else {
             RoutingEntry entry = findRoutingEntry(destAddr);
             ReverseRoutingEntry reverseEntry = findReverseRoutingEntry(sourceAddr);
@@ -432,7 +439,7 @@ public class ProtocolManager {
             lifeTime = lifetimeToBinary(lifeTime);
             System.out.println(lifeTime + "|" + lifeTime.length());
 
-            return new RREP(new BitString(lifeTime), new BitString(sourceAddr), new BitString(entry.getDestSeqNum()), new BitString(ownAddrAsBinary()), new BitString(entry.getHopCount()));
+            return new RREP(new BitString(lifeTime), new BitString(ownAddrAsBinary()), new BitString(entry.getDestSeqNum()), new BitString(sourceAddr), new BitString(entry.getHopCount()));
         }
     }
 
@@ -451,11 +458,12 @@ public class ProtocolManager {
 
         destinationAddress = convertAddressToString(destinationAddress);
 
+        System.out.println(lifeTime + " " + destinationAddress + " " + destinationSequence + " " + hopCount + " " + originatorAddress );
         // Create new RREP for forwarding
         RREP rrep = null;
         try {
             rrep = new RREP(new BitString(lifeTime),
-                    new BitString(destinationAddress),
+                    new BitString(convertAddressToBinary(destinationAddress)),
                     new BitString(destinationSequence),
                     new BitString(hopCount),
                     new BitString(originatorAddress));
@@ -483,7 +491,7 @@ public class ProtocolManager {
 
         }
 
-        if (entry == null) {
+        if (entry == null || prevEntry == null) {
             addRoutingTable(prevHop, destinationSequence, prevHop, hopCount, false, lifeTime, originatorAddress);
         } else if (!prevEntry.isValidDestSeqNum() ||
                 Integer.parseInt(destinationSequence) > Integer.parseInt(prevEntry.getDestSeqNum())
@@ -499,7 +507,7 @@ public class ProtocolManager {
             entry.setDestSeqNum(destSeqNumForEntry);
         }
 
-        if (destinationAddress.equals(ownAddr)) {
+        if (originatorAddress.equals(ownAddr)) {
             console.printMessage("ProtocolManager >>> RREP for own address received.\n");
             String life = String.valueOf(Long.parseLong(lifeTime) + System.currentTimeMillis());
             routingTableManager.addRoutingEntry(new RoutingEntry(destinationAddress, destinationSequence, prevHop, hopCount, true, life));
@@ -606,9 +614,10 @@ public class ProtocolManager {
             dataAsBinary.append(String.format("%8s", Integer.toBinaryString(b & 0xFF)).replace(' ', '0'));
         }
 
+
         DATA dataPacket = new DATA(
-                new BitString(destAddr),
-                new BitString(dataAsBinary.toString())
+                new BitString(dataAsBinary.toString()),
+                new BitString(destAddr)
         );
         try {
             sendDATA(dataPacket);
@@ -621,7 +630,26 @@ public class ProtocolManager {
     //--------------------------------------------------------------------------------------------------------------
     // Utility Methods (Decoding, Encoding, Incrementing, Parsing etc.)
     //--------------------------------------------------------------------------------------------------------------
+    public static byte[] userDataPacketEncode(byte[] udPacket) {
 
+        var a = Arrays.copyOfRange(udPacket, 0, 4);
+        var fB = (byte) ((a[1] & 0x0c) >> 2);
+        var sB = (byte) (((a[1] & 0x03) << 6) | ((a[2] & 0x0f) << 2) | ((a[3] & 0x0c) >> 2));
+        var tB = (byte) (((a[3] & 0x03) << 6) | ((a[4] & 0x0f) << 2));
+        var b = Arrays.copyOfRange(udPacket, 5, udPacket.length - 1);
+        var res = new byte[b.length];
+        for (int i = 0; i < res.length; i++) {
+            if (i == 0) {
+                tB = (byte) (tB | ((b[i] & 0xc0) >> 6));
+            } else if (i == res.length - 1) {
+                res[i] = (byte) (b[i] << 2);
+                continue;
+            }
+            res[i] = (byte) ((b[i] << 2) | ((b[i + 1] & 0xc0) >> 6));
+
+        }
+        return ArrayUtils.addAll(new byte[]{fB, sB, tB}, res);
+    }
     private String encodeBase64(byte[] bytes) {
         return Base64.getEncoder().encodeToString(bytes);
 
